@@ -1,0 +1,25 @@
+{
+  "name": "northstar-institute",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "api": "node server.js",
+    "build": "vite build",
+    "preview": "vite preview",
+    "seed:mongodb": "mongosh \"$MONGODB_URI\" --quiet scripts/seed-mongodb.js",
+    "seed:testing": "node scripts/seed-testing.js",
+    "validate:testing": "node scripts/validate-testing.js",
+    "validate:duplicates": "node scripts/validate-duplicate-defense.js"
+  },
+  "dependencies": {
+    "@vitejs/plugin-react": "latest",
+    "lucide-react": "latest",
+    "vite": "latest",
+    "react": "latest",
+    "react-dom": "latest",
+    "mongodb": "latest"
+  },
+  "devDependencies": {}
+}
