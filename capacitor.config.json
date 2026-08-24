@@ -1,0 +1,22 @@
+{
+  "appId": "com.sreevijetha.institute",
+  "appName": "Vijetha Institute",
+  "webDir": "dist",
+  "backgroundColor": "#17242a",
+  "server": {
+    "androidScheme": "https"
+  },
+  "plugins": {
+    "SplashScreen": {
+      "launchAutoHide": false,
+      "backgroundColor": "#17242aff",
+      "showSpinner": false,
+      "androidScaleType": "CENTER_CROP"
+    },
+    "StatusBar": {
+      "style": "LIGHT",
+      "backgroundColor": "#17242a",
+      "overlaysWebView": false
+    }
+  }
+}

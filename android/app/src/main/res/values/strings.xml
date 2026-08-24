@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Vijetha Institute</string>
+    <string name="title_activity_main">Vijetha Institute</string>
+    <string name="package_name">com.sreevijetha.institute</string>
+    <string name="custom_url_scheme">com.sreevijetha.institute</string>
+</resources>

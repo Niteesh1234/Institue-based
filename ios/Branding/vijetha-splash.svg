@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="2732" height="2732" viewBox="0 0 2732 2732">
+  <rect width="2732" height="2732" fill="#17242A"/>
+  <rect x="1066" y="1066" width="600" height="600" rx="150" fill="#E97863"/>
+  <path d="M1188 1176h98l80 218 80-218h98l-132 338h-92l-132-338Z" fill="#17242A"/>
+  <path d="M1446 1148h98v98" fill="none" stroke="#FFF9EF" stroke-width="34" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="1366" y="1815" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="112" font-weight="700" fill="#FFF9EF">VIJETHA INSTITUTE</text>
+</svg>

@@ -1,5 +1,10 @@
-import { Component, useEffect, useMemo, useState } from "react";
+import { Component, useEffect, useMemo, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
+import { Capacitor } from "@capacitor/core";
+import { App as CapacitorApp } from "@capacitor/app";
+import { Browser } from "@capacitor/browser";
+import { SplashScreen } from "@capacitor/splash-screen";
+import { StatusBar, Style } from "@capacitor/status-bar";
 import {
   Activity,
   AlertCircle,
@@ -27,6 +32,7 @@ import {
   MessageSquare,
   MoreHorizontal,
   Pencil,
+  Phone,
   Plus,
   Printer,
   RefreshCw,
@@ -34,7 +40,6 @@ import {
   Send,
   Settings,
   ShieldCheck,
-  Sparkles,
   Trash2,
   UserPlus,
   Users,
@@ -51,53 +56,8 @@ import {
   LANGUAGE_SKILLS,
   MAT_SECTION_PLAN,
 } from "../syllabus.js";
-
-const INITIAL_STUDENTS = [
-  {
-    id: 1,
-    initials: "AN",
-    name: "Aarav Nair",
-    batch: "JNVST Morning A",
-    progress: 86,
-    state: "On track",
-    tone: "green",
-    guardian: "Meera Nair",
-    last: "Today, 10:42",
-  },
-  {
-    id: 2,
-    initials: "SK",
-    name: "Saanvi Kumar",
-    batch: "JNVST Morning A",
-    progress: 72,
-    state: "On track",
-    tone: "green",
-    guardian: "Raj Kumar",
-    last: "Today, 09:18",
-  },
-  {
-    id: 3,
-    initials: "JL",
-    name: "Jiya Lal",
-    batch: "JNVST Evening B",
-    progress: 48,
-    state: "At risk",
-    tone: "red",
-    guardian: "Kiran Lal",
-    last: "Aug 18",
-  },
-  {
-    id: 4,
-    initials: "RM",
-    name: "Rehan Malik",
-    batch: "JNVST Weekend",
-    progress: 64,
-    state: "Needs review",
-    tone: "amber",
-    guardian: "Amina Malik",
-    last: "Yesterday",
-  },
-];
+import { EXAM_COURSES, getExamCourse } from "../exam-courses.js";
+import { I18nProvider, LanguageSelector, useI18n } from "./i18n.jsx";
 
 const BATCHES = [
   {
@@ -130,10 +90,117 @@ const RANKS = [
   ["Jiya Lal", "63.75", "4"],
 ];
 
+const DEMO_STUDENTS = [
+  { id: "demo-aarav", name: "Aarav Nair", batch: "JNVST Morning A", progress: 86, status: "On track", lastActive: "Today, 10:42" },
+  { id: "demo-saanvi", name: "Saanvi Kumar", batch: "JNVST Morning A", progress: 72, status: "On track", lastActive: "Today, 09:18" },
+  { id: "demo-jiya", name: "Jiya Lal", batch: "JNVST Evening B", progress: 48, status: "At risk", lastActive: "Aug 18" },
+  { id: "demo-rehan", name: "Rehan Malik", batch: "JNVST Weekend", progress: 64, status: "Needs review", lastActive: "Yesterday" },
+];
+
+const NATIVE_PLATFORM = Capacitor.getPlatform();
+const IS_NATIVE_APP = Capacitor.isNativePlatform();
+const NATIVE_API_BASE_URL = "https://vijetha-jnvst-testing.vercel.app";
+const NATIVE_SESSION_KEY = "vijetha_native_session";
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL ||
-  (import.meta.env.DEV ? "http://localhost:5174" : "");
+  (IS_NATIVE_APP
+    ? NATIVE_API_BASE_URL
+    : import.meta.env.DEV
+      ? "http://localhost:5174"
+      : "");
+const STATIC_BANK_URL = `${import.meta.env.BASE_URL}generated`;
 const EXPECTED_LEVELS = ["Easy", "Medium", "Challenging"];
+const QUESTION_DATA_TIMEOUT_MS = 7000;
+
+async function fetchQuestionResponse(url, signal) {
+  const controller = new AbortController();
+  const abortFromParent = () => controller.abort(signal?.reason);
+  signal?.addEventListener("abort", abortFromParent, { once: true });
+  const timeout = window.setTimeout(
+    () => controller.abort(new Error("Question data request timed out.")),
+    QUESTION_DATA_TIMEOUT_MS,
+  );
+
+  try {
+    return await fetch(url, {
+      signal: controller.signal,
+      cache: "no-store",
+      headers: { Accept: "application/json" },
+    });
+  } catch (error) {
+    if (signal?.aborted) throw error;
+    if (controller.signal.aborted) {
+      throw new Error(`Timed out while loading ${url}.`);
+    }
+    throw error;
+  } finally {
+    window.clearTimeout(timeout);
+    signal?.removeEventListener("abort", abortFromParent);
+  }
+}
+
+async function fetchQuestionData(staticPath, apiPath, signal) {
+  let lastError;
+  for (const url of [staticPath, `${API_BASE_URL}${apiPath}`]) {
+    try {
+      const response = await fetchQuestionResponse(url, signal);
+      const payload = await response.json().catch(() => ({}));
+      if (response.ok) return payload;
+      lastError = new Error(payload.error || `Request failed with status ${response.status}.`);
+    } catch (error) {
+      if (error.name === "AbortError") throw error;
+      lastError = error;
+    }
+  }
+  throw lastError || new Error("Question data could not be loaded.");
+}
+
+async function authRequest(path, options = {}) {
+  const nativeToken = IS_NATIVE_APP
+    ? window.localStorage.getItem(NATIVE_SESSION_KEY)
+    : "";
+  const response = await fetch(`${API_BASE_URL}${path}`, {
+    credentials: IS_NATIVE_APP ? "omit" : "include",
+    headers: {
+      "Content-Type": "application/json",
+      ...(IS_NATIVE_APP ? { "X-Vijetha-Platform": NATIVE_PLATFORM } : {}),
+      ...(nativeToken ? { Authorization: `Bearer ${nativeToken}` } : {}),
+      ...(options.headers || {}),
+    },
+    ...options,
+  });
+  const payload = await response.json().catch(() => ({}));
+  if (IS_NATIVE_APP && payload.sessionToken) {
+    window.localStorage.setItem(NATIVE_SESSION_KEY, payload.sessionToken);
+  }
+  if (!response.ok) {
+    if (IS_NATIVE_APP && response.status === 401) {
+      window.localStorage.removeItem(NATIVE_SESSION_KEY);
+    }
+    const error = new Error(payload.error || "Authentication could not be completed.");
+    error.code = payload.code;
+    throw error;
+  }
+  return payload;
+}
+
+function clearNativeSession() {
+  if (IS_NATIVE_APP) window.localStorage.removeItem(NATIVE_SESSION_KEY);
+}
+
+async function openExternalLink(event, url) {
+  if (!IS_NATIVE_APP) return;
+  event.preventDefault();
+  await Browser.open({ url });
+}
+
+function userInitials(name = "Vijetha User") {
+  return name.split(/\s+/).filter(Boolean).slice(0, 2).map((part) => part[0]?.toUpperCase()).join("") || "VU";
+}
+
+function roleLabel(role) {
+  return role === "administrator" ? "Institute administrator" : "Institute teacher";
+}
 
 function optionLabel(option) {
   if (option == null) return "";
@@ -175,7 +242,7 @@ function normalizeFullCatalog(tests) {
   }));
 }
 
-function validateFullCatalog(tests) {
+function validateFullCatalog(tests, course) {
   if (tests.length !== 30)
     throw new Error(
       `Testing returned ${tests.length} papers; 30 are required.`,
@@ -188,17 +255,15 @@ function validateFullCatalog(tests) {
       );
   }
   for (const test of tests) {
-    if (test.questions.length !== 80)
+    if (test.questionCount !== course.standard.questionsPerPaper)
       throw new Error(
-        `${test.id} contains ${test.questions.length} questions; 80 are required.`,
+        `${test.id} declares ${test.questionCount} questions; ${course.standard.questionsPerPaper} are required.`,
       );
-    for (const section of JNVST_BLUEPRINT) {
-      const count = test.questions.filter(
-        (question) => question.subject === section.subject,
-      ).length;
-      if (count !== 20)
+    for (const section of course.blueprint) {
+      const count = test.sectionCounts?.[section.subject] || 0;
+      if (count !== section.questionCount)
         throw new Error(
-          `${test.id} has ${count} ${section.subject} questions; 20 are required.`,
+          `${test.id} has ${count} ${section.subject} questions; ${section.questionCount} are required.`,
         );
     }
   }
@@ -214,51 +279,231 @@ const NAV_ITEMS = [
   ["Syllabus", BookOpen],
 ];
 
+const NAV_MESSAGE_KEYS = {
+  Dashboard: "dashboard",
+  Students: "students",
+  Classes: "classes",
+  "Mock Tests": "mockTests",
+  Progress: "progress",
+  Parents: "parents",
+  Syllabus: "syllabus",
+  Settings: "settings",
+};
+
+const LANDING_COPY = {
+  en: {
+    standards: "Exam standards", modules: "Modules",
+    pill: "Three Class VI entrance course libraries",
+    title: "One stop place for JNVST, AISSEE, and RMS preparation.",
+    copy: "Manage students and classes, deliver 90 syllabus-aligned full tests, follow progress, and keep parents informed—from one focused institute portal.",
+    open: "Open secure workspace", view: "View exam standard",
+    tests: "full tests", records: "question records", blueprints: "exam blueprints",
+    glance: "Preparation at a glance", official: "Each course keeps its own official structure.",
+  },
+  hi: {
+    standards: "परीक्षा मानक", modules: "मॉड्यूल",
+    pill: "कक्षा VI की तीन प्रवेश परीक्षा लाइब्रेरी",
+    title: "JNVST, AISSEE और RMS की तैयारी के लिए एक ही स्थान।",
+    copy: "विद्यार्थियों और कक्षाओं का प्रबंधन करें, 90 पाठ्यक्रम-अनुरूप पूर्ण टेस्ट संचालित करें, प्रगति देखें और अभिभावकों को सूचित रखें।",
+    open: "सुरक्षित कार्यक्षेत्र खोलें", view: "परीक्षा मानक देखें",
+    tests: "पूर्ण टेस्ट", records: "प्रश्न रिकॉर्ड", blueprints: "परीक्षा प्रारूप",
+    glance: "तैयारी एक नज़र में", official: "हर पाठ्यक्रम अपना आधिकारिक प्रारूप बनाए रखता है।",
+  },
+  te: {
+    standards: "పరీక్ష ప్రమాణాలు", modules: "మాడ్యూల్స్",
+    pill: "ఆరవ తరగతికి మూడు ప్రవేశ పరీక్ష లైబ్రరీలు",
+    title: "JNVST, AISSEE మరియు RMS సిద్ధతకు ఒకే చోట.",
+    copy: "విద్యార్థులు, తరగతులను నిర్వహించండి; సిలబస్‌కు అనుగుణమైన 90 పూర్తి టెస్టులు అందించండి; పురోగతిని గమనించి తల్లిదండ్రులకు సమాచారం ఇవ్వండి.",
+    open: "సురక్షిత వర్క్‌స్పేస్ తెరవండి", view: "పరీక్ష ప్రమాణాన్ని చూడండి",
+    tests: "పూర్తి టెస్టులు", records: "ప్రశ్న రికార్డులు", blueprints: "పరీక్ష నమూనాలు",
+    glance: "సిద్ధత ఒక చూపులో", official: "ప్రతి కోర్సు తన అధికారిక నిర్మాణాన్ని కొనసాగిస్తుంది.",
+  },
+};
+
+function BrandLogo({ className = "" }) {
+  return (
+    <div className={`brand ${className}`.trim()} role="img" aria-label="Vijetha Institute Platform">
+      <span className="brand-mark" aria-hidden="true">
+        <svg viewBox="0 0 32 32" role="presentation">
+          <path d="M6.4 7.8h5.2L16 19.3l4.4-11.5h5.2L18.5 25h-5L6.4 7.8Z" />
+          <path className="brand-ascent" d="M20.4 6.4h5.2v5.2" />
+        </svg>
+      </span>
+      <span className="brand-lockup">
+        <span className="brand-name">
+          vijetha<span className="brand-dot">.</span>
+        </span>
+        <span className="brand-descriptor">Institute Platform</span>
+      </span>
+    </div>
+  );
+}
+
 function App() {
+  const { t, subject } = useI18n();
   const [stage, setStage] = useState("landing");
+  const [authUser, setAuthUser] = useState(null);
+  const [authConfigured, setAuthConfigured] = useState(null);
   const [active, setActive] = useState("Dashboard");
   const [mobileOpen, setMobileOpen] = useState(false);
   const [studioOpen, setStudioOpen] = useState(false);
   const [selectedTest, setSelectedTest] = useState(null);
-  const [studentRows, setStudentRows] = useState(INITIAL_STUDENTS);
+  const [studentRows, setStudentRows] = useState([]);
+  const [studentStatus, setStudentStatus] = useState("idle");
+  const [studentError, setStudentError] = useState("");
+  const [studentReloadKey, setStudentReloadKey] = useState(0);
+  const [batchRows, setBatchRows] = useState(BATCHES);
   const [fullTests, setFullTests] = useState([]);
   const [aggregation, setAggregation] = useState([]);
   const [catalogStatus, setCatalogStatus] = useState("loading");
   const [catalogError, setCatalogError] = useState("");
   const [reloadKey, setReloadKey] = useState(0);
   const [dataSource, setDataSource] = useState("Connecting to Testing");
+  const [courseKey, setCourseKey] = useState("jnvst");
+  const [testLoadStatus, setTestLoadStatus] = useState("idle");
+  const [testLoadError, setTestLoadError] = useState("");
+  const [workspaceOpen, setWorkspaceOpen] = useState(false);
+  const [notificationOpen, setNotificationOpen] = useState(false);
+  const [accountOpen, setAccountOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchOpen, setSearchOpen] = useState(false);
+  const searchRef = useRef(null);
+  const course = getExamCourse(courseKey);
+  const currentUser = authUser || { name: "Vijetha User", email: "", role: "teacher" };
+
+  useEffect(() => {
+    if (!IS_NATIVE_APP) return undefined;
+    Promise.allSettled([
+      StatusBar.setOverlaysWebView({ overlay: false }),
+      StatusBar.setBackgroundColor({ color: "#17242a" }),
+      StatusBar.setStyle({ style: Style.Light }),
+    ]).finally(() => SplashScreen.hide());
+    return undefined;
+  }, []);
+
+  useEffect(() => {
+    if (!IS_NATIVE_APP) return undefined;
+    let listener;
+    CapacitorApp.addListener("backButton", () => {
+      if (studioOpen) {
+        setStudioOpen(false);
+        setSelectedTest(null);
+      } else if (mobileOpen) {
+        setMobileOpen(false);
+      } else if (stage === "login") {
+        setStage("landing");
+      } else {
+        CapacitorApp.minimizeApp();
+      }
+    }).then((handle) => { listener = handle; });
+    return () => listener?.remove();
+  }, [mobileOpen, stage, studioOpen]);
+
+  const searchItems = useMemo(() => {
+    const pages = [...NAV_ITEMS.map(([label]) => label), "Settings"].map(
+      (label) => ({ label, detail: "Workspace page", destination: label }),
+    );
+    const students = studentRows.map((student) => ({
+      label: student.name,
+      detail: student.batch,
+      destination: "Students",
+    }));
+    const batches = batchRows.map((batch) => ({
+      label: batch.name,
+      detail: batch.mentor,
+      destination: "Classes",
+    }));
+    const query = searchQuery.trim().toLowerCase();
+    if (!query) return pages.slice(0, 5);
+    return [...pages, ...students, ...batches]
+      .filter((item) =>
+        `${item.label} ${item.detail}`.toLowerCase().includes(query),
+      )
+      .slice(0, 8);
+  }, [batchRows, searchQuery, studentRows]);
+
+  useEffect(() => {
+    const focusSearch = (event) => {
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
+        event.preventDefault();
+        searchRef.current?.focus();
+        setSearchOpen(true);
+      }
+    };
+    window.addEventListener("keydown", focusSearch);
+    return () => window.removeEventListener("keydown", focusSearch);
+  }, []);
+
+  useEffect(() => {
+    if (!authUser) return undefined;
+    if (authUser.demo) {
+      setStudentRows(DEMO_STUDENTS);
+      setStudentStatus("ready");
+      setStudentError("");
+      return undefined;
+    }
+    const controller = new AbortController();
+    setStudentStatus("loading");
+    setStudentError("");
+    setStudentRows([]);
+    authRequest(`/api/students?course=${encodeURIComponent(courseKey)}`, {
+      method: "GET",
+      signal: controller.signal,
+    })
+      .then((payload) => {
+        setStudentRows(payload.students || []);
+        setStudentStatus("ready");
+      })
+      .catch((error) => {
+        if (error.name === "AbortError") return;
+        setStudentRows([]);
+        setStudentStatus("error");
+        setStudentError(error.message || "Students could not be loaded.");
+      });
+    return () => controller.abort();
+  }, [authUser, courseKey, studentReloadKey]);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    authRequest("/api/auth/session", { method: "GET", signal: controller.signal })
+      .then((payload) => {
+        setAuthConfigured(Boolean(payload.configured));
+        if (payload.authenticated && payload.user) {
+          setAuthUser(payload.user);
+          setStage("portal");
+        }
+      })
+      .catch((error) => {
+        if (error.name !== "AbortError") setAuthConfigured(false);
+      });
+    return () => controller.abort();
+  }, []);
 
   useEffect(() => {
     const controller = new AbortController();
     const loadCatalog = async () => {
       setCatalogStatus("loading");
       setCatalogError("");
+      setFullTests([]);
+      setAggregation([]);
       try {
-        const [catalogResponse, aggregationResponse] = await Promise.all([
-          fetch(`${API_BASE_URL}/api/full-test-catalog`, {
-            signal: controller.signal,
-          }),
-          fetch(`${API_BASE_URL}/api/question-aggregation`, {
-            signal: controller.signal,
-          }),
+        const [catalogPayload, aggregationPayload] = await Promise.all([
+          fetchQuestionData(
+            `${STATIC_BANK_URL}/${courseKey}/catalog.json`,
+            `/api/full-test-catalog?course=${courseKey}`,
+            controller.signal,
+          ),
+          fetchQuestionData(
+            `${STATIC_BANK_URL}/${courseKey}/aggregation.json`,
+            `/api/question-aggregation?course=${courseKey}`,
+            controller.signal,
+          ),
         ]);
-        const catalogPayload = await catalogResponse.json();
-        const aggregationPayload = await aggregationResponse.json();
-        if (!catalogResponse.ok)
-          throw new Error(
-            catalogPayload.error ||
-              "The full-test catalog could not be loaded.",
-          );
-        if (!aggregationResponse.ok)
-          throw new Error(
-            aggregationPayload.error ||
-              "Question-bank aggregation could not be loaded.",
-          );
         const tests = normalizeFullCatalog(catalogPayload.tests || []);
-        validateFullCatalog(tests);
+        validateFullCatalog(tests, course);
         setFullTests(tests);
         setAggregation(aggregationPayload.aggregation || []);
-        setDataSource(catalogPayload.source || "Testing.jnvst_questions");
+        setDataSource(catalogPayload.source || `Testing.${courseKey}_questions`);
         setCatalogStatus("ready");
       } catch (error) {
         if (error.name === "AbortError") return;
@@ -273,13 +518,84 @@ function App() {
     };
     loadCatalog();
     return () => controller.abort();
-  }, [reloadKey]);
+  }, [reloadKey, courseKey]);
+
+  const loadTest = async (testId) => {
+    if (!testId) return;
+    const existing = fullTests.find((item) => item.id === testId);
+    if (existing && existing.questions?.length === existing.questionCount) {
+      setTestLoadStatus("ready");
+      return;
+    }
+    setTestLoadStatus("loading");
+    setTestLoadError("");
+    const controller = new AbortController();
+    const timeout = window.setTimeout(() => controller.abort(), 12000);
+    try {
+      const payload = await fetchQuestionData(
+        `${STATIC_BANK_URL}/${courseKey}/tests/${encodeURIComponent(testId)}.json`,
+        `/api/full-test?course=${courseKey}&id=${encodeURIComponent(testId)}`,
+        controller.signal,
+      );
+      const loaded = normalizeFullCatalog([payload.test])[0];
+      if (!loaded) throw new Error(`${testId} was not found.`);
+      if (loaded.questions.length !== course.standard.questionsPerPaper)
+        throw new Error(
+          `${testId} returned ${loaded.questions.length}/${course.standard.questionsPerPaper} questions.`,
+        );
+      setFullTests((current) =>
+        current.map((item) => (item.id === testId ? loaded : item)),
+      );
+      setTestLoadStatus("ready");
+    } catch (error) {
+      setTestLoadStatus("error");
+      setTestLoadError(
+        error.name === "AbortError"
+          ? "The request timed out. Please retry the test."
+          : error.message || "Unable to load this full test.",
+      );
+    } finally {
+      window.clearTimeout(timeout);
+    }
+  };
 
   const openStudio = (testId = null) => {
+    const requestedTestId = typeof testId === "string" ? testId : null;
     setStudioOpen(true);
-    setSelectedTest(testId);
+    setSelectedTest(requestedTestId);
+    if (requestedTestId) loadTest(requestedTestId);
   };
   const retryCatalog = () => setReloadKey((key) => key + 1);
+  const navigateWorkspace = (destination) => {
+    setActive(destination);
+    setMobileOpen(false);
+    setSearchOpen(false);
+    setNotificationOpen(false);
+    setAccountOpen(false);
+  };
+  const changeCourse = (nextCourse) => {
+    setCourseKey(nextCourse);
+    setSelectedTest(null);
+    setStudioOpen(false);
+    setFullTests([]);
+    setAggregation([]);
+    setWorkspaceOpen(false);
+  };
+  const completeLogin = (user) => {
+    setAuthUser(user);
+    setAuthConfigured(user?.demo ? false : true);
+    setStage("portal");
+  };
+  const signOut = async () => {
+    try { await authRequest("/api/auth/logout", { method: "POST", body: "{}" }); } catch { /* Clear local access even if the session already expired. */ }
+    clearNativeSession();
+    setAuthUser(null);
+    setStudentRows([]);
+    setStudentStatus("idle");
+    setAccountOpen(false);
+    setStudioOpen(false);
+    setStage("landing");
+  };
 
   if (stage === "landing")
     return <LandingPage onLogin={() => setStage("login")} />;
@@ -287,30 +603,48 @@ function App() {
     return (
       <LoginPage
         onBack={() => setStage("landing")}
-        onLogin={() => setStage("portal")}
+        onLogin={completeLogin}
+        configured={authConfigured}
       />
     );
 
   return (
     <div className="app-shell">
       <aside className={`sidebar ${mobileOpen ? "open" : ""}`}>
-        <div className="brand">
-          <div className="brand-mark">
-            <Sparkles size={17} />
-          </div>
-          <span>
-            vijetha<span className="brand-dot">.</span>
-          </span>
+        <BrandLogo />
+        <div className="workspace-switcher-wrap">
+          <button
+            type="button"
+            className="workspace-switcher"
+            aria-expanded={workspaceOpen}
+            aria-haspopup="menu"
+            onClick={() => setWorkspaceOpen((open) => !open)}
+          >
+            <div className="institute-avatar">{course.shortName.slice(0, 2)}</div>
+            <div>
+              <strong>{course.shortName} · {course.className}</strong>
+              <small>Vijetha workspace</small>
+            </div>
+            <ChevronDown size={15} />
+          </button>
+          {workspaceOpen ? (
+            <div className="workspace-menu" role="menu">
+              {Object.values(EXAM_COURSES).map((item) => (
+                <button
+                  type="button"
+                  role="menuitem"
+                  key={item.key}
+                  className={courseKey === item.key ? "active" : ""}
+                  onClick={() => changeCourse(item.key)}
+                >
+                  <b>{item.shortName}</b>
+                  <span>{item.standard.questionsPerPaper} {t("questions")}</span>
+                </button>
+              ))}
+            </div>
+          ) : null}
         </div>
-        <div className="workspace-switcher">
-          <div className="institute-avatar">VI</div>
-          <div>
-            <strong>Vijetha Institute</strong>
-            <small>Admin workspace</small>
-          </div>
-          <ChevronDown size={15} />
-        </div>
-        <p className="nav-label">Workspace</p>
+        <p className="nav-label">{t("workspace")}</p>
         <nav>
           {NAV_ITEMS.map(([label, Icon]) => (
             <button
@@ -318,38 +652,40 @@ function App() {
               key={label}
               className={active === label ? "nav-item active" : "nav-item"}
               onClick={() => {
-                setActive(label);
-                setMobileOpen(false);
+                navigateWorkspace(label);
               }}
             >
               <Icon size={18} />
-              <span>{label}</span>
+              <span>{t(NAV_MESSAGE_KEYS[label])}</span>
               {label === "Mock Tests" && <span className="nav-badge">30</span>}
             </button>
           ))}
         </nav>
         <div className="sidebar-bottom">
           <div className="integrity">
-            <ShieldCheck size={16} />
+            <BookOpen size={16} />
             <div>
-              <strong>Syllabus integrity</strong>
-              <span>JNVST 2027 locked</span>
+              <strong>{t("examBlueprint")}</strong>
+              <span>{course.shortName} · {course.year} {t("syllabus")}</span>
             </div>
-            <Check size={15} />
           </div>
-          <button type="button" className="nav-item">
+          <button
+            type="button"
+            className={active === "Settings" ? "nav-item active" : "nav-item"}
+            onClick={() => navigateWorkspace("Settings")}
+          >
             <Settings size={18} />
-            <span>Settings</span>
+            <span>{t("settings")}</span>
           </button>
           <button
             type="button"
             className="profile profile-button"
-            onClick={() => setStage("landing")}
+            onClick={signOut}
           >
-            <div className="avatar coral">AK</div>
+            <div className="avatar coral">{userInitials(currentUser.name)}</div>
             <div>
-              <strong>Amara Khan</strong>
-              <small>Sign out</small>
+              <strong>{currentUser.name}</strong>
+              <small>{t("signOut")}</small>
             </div>
             <LogIn size={17} />
           </button>
@@ -370,46 +706,136 @@ function App() {
           <div className="breadcrumbs">
             <span>Vijetha Institute</span>
             <span>/</span>
-            <strong>{active}</strong>
+            <strong>{t(NAV_MESSAGE_KEYS[active] || active)}</strong>
           </div>
           <div className="top-actions">
-            <label className="search">
-              <Search size={16} />
-              <input
-                aria-label="Search workspace"
-                placeholder="Search anything"
-              />
-              <kbd>⌘ K</kbd>
-            </label>
-            <button
-              type="button"
-              className="icon-button notification"
-              aria-label="View notifications"
-            >
-              <Bell size={18} />
-              <i />
-            </button>
-            <div className="avatar coral">AK</div>
+            <LanguageSelector compact className="top-language-selector" />
+            <div className="top-action-anchor search-anchor">
+              <label className="search">
+                <Search size={16} />
+                <input
+                  ref={searchRef}
+                  aria-label={t("searchWorkspace")}
+                  placeholder={t("searchAnything")}
+                  value={searchQuery}
+                  onFocus={() => setSearchOpen(true)}
+                  onChange={(event) => {
+                    setSearchQuery(event.target.value);
+                    setSearchOpen(true);
+                  }}
+                  onKeyDown={(event) => {
+                    if (event.key === "Escape") setSearchOpen(false);
+                    if (event.key === "Enter" && searchItems[0]) {
+                      navigateWorkspace(searchItems[0].destination);
+                      setSearchQuery("");
+                    }
+                  }}
+                />
+                <kbd>⌘ K</kbd>
+              </label>
+              {searchOpen ? (
+                <div className="top-popover search-results" role="listbox">
+                  {searchItems.length ? (
+                    searchItems.map((item) => (
+                      <button
+                        type="button"
+                        role="option"
+                        key={`${item.destination}-${item.label}`}
+                        onMouseDown={(event) => event.preventDefault()}
+                        onClick={() => {
+                          navigateWorkspace(item.destination);
+                          setSearchQuery("");
+                        }}
+                      >
+                        <b>{item.label}</b>
+                        <span>{item.detail}</span>
+                      </button>
+                    ))
+                  ) : (
+                    <p>No matching page, student, or class.</p>
+                  )}
+                </div>
+              ) : null}
+            </div>
+            <div className="top-action-anchor">
+              <button
+                type="button"
+                className="icon-button notification"
+                aria-label="View notifications"
+                aria-expanded={notificationOpen}
+                onClick={() => {
+                  setNotificationOpen((open) => !open);
+                  setAccountOpen(false);
+                }}
+              >
+                <Bell size={18} />
+                <i />
+              </button>
+              {notificationOpen ? (
+                <div className="top-popover notification-panel" role="status">
+                  <strong>Notifications</strong>
+                  <p>30 {course.shortName} full tests are ready.</p>
+                  <p>{studentRows.filter((student) => student.progress < 70).length} students need a progress follow-up.</p>
+                  <button type="button" onClick={() => navigateWorkspace("Progress")}>Open progress</button>
+                </div>
+              ) : null}
+            </div>
+            <div className="top-action-anchor">
+              <button
+                type="button"
+                className="avatar coral account-trigger"
+                aria-label="Open account menu"
+                aria-expanded={accountOpen}
+                onClick={() => {
+                  setAccountOpen((open) => !open);
+                  setNotificationOpen(false);
+                }}
+              >
+                {userInitials(currentUser.name)}
+              </button>
+              {accountOpen ? (
+                <div className="top-popover account-panel" role="menu">
+                  <strong>{currentUser.name}</strong>
+                  <span>{roleLabel(currentUser.role)} · {currentUser.email}</span>
+                  <button type="button" role="menuitem" onClick={() => navigateWorkspace("Settings")}>Workspace settings</button>
+                  <button type="button" role="menuitem" onClick={signOut}>Sign out</button>
+                </div>
+              ) : null}
+            </div>
           </div>
         </header>
         <div className="page-wrap portal-page-wrap">
+          <CourseTabs activeCourse={courseKey} onChange={changeCourse} />
           {active === "Dashboard" && (
             <DashboardPage
+              course={course}
               students={studentRows}
               fullTests={fullTests}
               aggregation={aggregation}
               catalogStatus={catalogStatus}
               dataSource={dataSource}
-              onNavigate={setActive}
-              onOpenTests={() => openStudio()}
+              user={currentUser}
+              onNavigate={navigateWorkspace}
+              onOpenTests={openStudio}
             />
           )}
           {active === "Students" && (
-            <StudentsPage students={studentRows} setStudents={setStudentRows} />
+            <StudentsPage
+              students={studentRows}
+              setStudents={setStudentRows}
+              status={studentStatus}
+              error={studentError}
+              onRetry={() => setStudentReloadKey((key) => key + 1)}
+              course={course}
+              batches={batchRows}
+            />
           )}
-          {active === "Classes" && <ClassesPage />}
+          {active === "Classes" && (
+            <ClassesPage batches={batchRows} setBatches={setBatchRows} />
+          )}
           {active === "Mock Tests" && (
             <MockTestsPage
+              course={course}
               tests={fullTests}
               status={catalogStatus}
               error={catalogError}
@@ -420,24 +846,54 @@ function App() {
           )}
           {active === "Progress" && <ProgressPage students={studentRows} />}
           {active === "Parents" && <ParentsPage students={studentRows} />}
-          {active === "Syllabus" && <SyllabusPage />}
+          {active === "Syllabus" && <SyllabusPage course={course} />}
+          {active === "Settings" && (
+            <SettingsPage course={course} onCourseChange={changeCourse} />
+          )}
         </div>
       </main>
 
       {studioOpen && (
         <TestStudioBoundary onClose={() => setStudioOpen(false)}>
           <TestStudio
+            course={course}
             testCatalog={fullTests}
             selectedTest={selectedTest}
             setSelectedTest={setSelectedTest}
             status={catalogStatus}
             error={catalogError}
             onRetry={retryCatalog}
+            onLoadTest={loadTest}
+            testLoadStatus={testLoadStatus}
+            testLoadError={testLoadError}
             close={() => setStudioOpen(false)}
           />
         </TestStudioBoundary>
       )}
     </div>
+  );
+}
+
+function CourseTabs({ activeCourse, onChange }) {
+  const { t } = useI18n();
+  return (
+    <section className="course-tabs" aria-label="Entrance exam courses">
+      <div>
+        <span>{t("courseLibrary").toUpperCase()}</span>
+        <strong>{t("chooseExam")}</strong>
+      </div>
+      {Object.values(EXAM_COURSES).map((item) => (
+        <button
+          type="button"
+          key={item.key}
+          className={activeCourse === item.key ? "active" : ""}
+          onClick={() => onChange(item.key)}
+        >
+          <b>{item.shortName}</b>
+          <small>{item.className} · {item.standard.questionsPerPaper} {t("questions")}</small>
+        </button>
+      ))}
+    </section>
   );
 }
 
@@ -473,57 +929,49 @@ class TestStudioBoundary extends Component {
 }
 
 function LandingPage({ onLogin }) {
+  const { locale, t } = useI18n();
+  const copy = LANDING_COPY[locale] || LANDING_COPY.en;
   return (
     <main className="public-shell">
       <nav className="public-nav">
-        <div className="brand">
-          <div className="brand-mark">
-            <Sparkles size={17} />
-          </div>
-          <span>
-            vijetha<span className="brand-dot">.</span>
-          </span>
-        </div>
+        <BrandLogo />
         <div>
-          <a href="#standard">JNVST standard</a>
-          <a href="#features">Modules</a>
+          <LanguageSelector compact className="public-language-selector" />
+          <a href="#standard">{copy.standards}</a>
+          <a href="#features">{copy.modules}</a>
           <button type="button" className="button primary" onClick={onLogin}>
-            Institute login <ArrowRight size={16} />
+            {t("instituteLogin")} <ArrowRight size={16} />
           </button>
         </div>
       </nav>
       <section className="hero">
         <div className="hero-copy">
           <span className="hero-pill">
-            <ShieldCheck size={15} /> Supplied JNVST Class 6 syllabus preserved
+            <ShieldCheck size={15} /> {copy.pill}
           </span>
-          <h1>One beautiful workspace for serious JNVST preparation.</h1>
-          <p>
-            Manage students and classes, deliver 30 syllabus-aligned full tests,
-            follow progress, and keep parents informed—from one focused
-            institute portal.
-          </p>
+          <h1>{copy.title}</h1>
+          <p>{copy.copy}</p>
           <div className="hero-actions">
             <button
               type="button"
               className="button primary large"
               onClick={onLogin}
             >
-              Open demo workspace <ArrowRight size={18} />
+              {copy.open} <ArrowRight size={18} />
             </button>
             <a className="button secondary large" href="#standard">
-              View exam standard
+              {copy.view}
             </a>
           </div>
           <div className="hero-proof">
             <span>
-              <strong>30</strong> full tests
+              <strong>90</strong> {copy.tests}
             </span>
             <span>
-              <strong>2,400</strong> unique questions
+              <strong>12,150</strong> {copy.records}
             </span>
             <span>
-              <strong>80</strong> questions each
+              <strong>3</strong> {copy.blueprints}
             </span>
           </div>
         </div>
@@ -536,8 +984,8 @@ function LandingPage({ onLogin }) {
           <div className="preview-body">
             <div className="preview-side" />
             <div className="preview-content">
-              <small>JNVST 2027 CONTROL ROOM</small>
-              <h2>Preparation at a glance</h2>
+              <small>MULTI-EXAM CONTROL ROOM</small>
+              <h2>{copy.glance}</h2>
               <div className="preview-metrics">
                 <i />
                 <i />
@@ -555,34 +1003,58 @@ function LandingPage({ onLogin }) {
           </div>
         </div>
       </section>
+      <section className="admissions-feature" aria-labelledby="admissions-title">
+        <div className="admissions-feature-copy">
+          <span>{t("admissionsOpen")}</span>
+          <h2 id="admissions-title">{t("admissionsCopy")}</h2>
+          <div>
+            <a className="button primary large" href="tel:+919701817953">
+              <Phone size={17} /> {t("callAdmissions")}
+            </a>
+            <a className="button secondary large" href="https://www.sreevijetha.com" target="_blank" rel="noreferrer" onClick={(event) => openExternalLink(event, "https://www.sreevijetha.com")}>
+              {t("visitSchool")} <ArrowUpRight size={16} />
+            </a>
+          </div>
+        </div>
+        <a className="admissions-banner" href="https://www.sreevijetha.com" target="_blank" rel="noreferrer" onClick={(event) => openExternalLink(event, "https://www.sreevijetha.com")}>
+          <img
+            src="/vijetha-admissions-banner.jpg"
+            alt={t("admissionsBannerAlt")}
+            width="1536"
+            height="1024"
+            loading="lazy"
+            decoding="async"
+          />
+        </a>
+      </section>
       <section className="public-standard" id="standard">
-        <p>EXACT EXAM BLUEPRINT</p>
-        <h2>Built around the syllabus you supplied.</h2>
+        <p>{copy.blueprints.toUpperCase()}</p>
+        <h2>{copy.official}</h2>
         <div>
-          {JNVST_BLUEPRINT.map((section) => (
-            <article key={section.key}>
-              <span>{section.section}</span>
-              <h3>{section.subject}</h3>
+          {Object.values(EXAM_COURSES).map((item) => (
+            <article key={item.key}>
+              <span>{item.className} · {item.year}</span>
+              <h3>{item.shortName}</h3>
               <strong>
-                {section.questionCount} questions · {section.marks} marks
+                {item.standard.questionsPerPaper} {t("questions")} · {item.standard.marksPerPaper} {t("marks")}
               </strong>
-              <p>{section.durationMinutes} minutes</p>
+              <p>{item.standard.durationMinutes} {t("minutes")} · 30 {copy.tests}</p>
             </article>
           ))}
         </div>
       </section>
       <section className="feature-strip" id="features">
         {[
-          ["Students", Users],
-          ["Classes", CalendarDays],
-          ["Mock tests", ClipboardCheck],
-          ["Progress", BarChart3],
-          ["Parents", MessageSquare],
-          ["Syllabus", BookOpen],
-        ].map(([label, Icon]) => (
-          <div key={label}>
+          ["students", Users],
+          ["classes", CalendarDays],
+          ["mockTests", ClipboardCheck],
+          ["progress", BarChart3],
+          ["parents", MessageSquare],
+          ["syllabus", BookOpen],
+        ].map(([key, Icon]) => (
+          <div key={key}>
             <Icon size={20} />
-            <strong>{label}</strong>
+            <strong>{t(key)}</strong>
           </div>
         ))}
       </section>
@@ -590,42 +1062,166 @@ function LandingPage({ onLogin }) {
   );
 }
 
-function LoginPage({ onBack, onLogin }) {
+function LoginPage({ onBack, onLogin, configured }) {
+  const { t } = useI18n();
+  const [mode, setMode] = useState("login");
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [code, setCode] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+  const [notice, setNotice] = useState("");
+  const resetMessages = () => { setError(""); setNotice(""); };
+  const changeMode = (nextMode) => {
+    resetMessages();
+    setCode("");
+    setPassword("");
+    setConfirmPassword("");
+    setMode(nextMode);
+  };
+  const headings = {
+    login: ["Welcome back.", "Sign in with your verified Vijetha account."],
+    register: ["Create your account.", "Your email must be verified before workspace access is granted."],
+    verify: ["Verify your email.", `Enter the six-digit code sent to ${email}.`],
+    forgot: ["Reset your password.", "Enter your verified email to receive a reset code."],
+    reset: ["Choose a new password.", `Enter the code sent to ${email}, then create a new password.`],
+  };
+  const [title, copy] = headings[mode];
+
+  const submit = async (event) => {
+    event.preventDefault();
+    resetMessages();
+    if (["register", "reset"].includes(mode) && password !== confirmPassword) {
+      setError("The passwords do not match.");
+      return;
+    }
+    setBusy(true);
+    try {
+      if (mode === "login") {
+        const payload = await authRequest("/api/auth/login", { method: "POST", body: JSON.stringify({ email, password }) });
+        onLogin(payload.user);
+      } else if (mode === "register") {
+        const payload = await authRequest("/api/auth/register", { method: "POST", body: JSON.stringify({ name, email, password }) });
+        setNotice(payload.message);
+        setMode("verify");
+        setPassword("");
+        setConfirmPassword("");
+      } else if (mode === "verify") {
+        const payload = await authRequest("/api/auth/verify-otp", { method: "POST", body: JSON.stringify({ email, code, purpose: "verify-email" }) });
+        onLogin(payload.user);
+      } else if (mode === "forgot") {
+        const payload = await authRequest("/api/auth/request-otp", { method: "POST", body: JSON.stringify({ email, purpose: "reset-password" }) });
+        setNotice(payload.message);
+        setMode("reset");
+      } else if (mode === "reset") {
+        const payload = await authRequest("/api/auth/verify-otp", { method: "POST", body: JSON.stringify({ email, code, purpose: "reset-password", newPassword: password }) });
+        onLogin(payload.user);
+      }
+    } catch (requestError) {
+      setError(requestError.message);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const resendCode = async () => {
+    resetMessages();
+    setBusy(true);
+    try {
+      const payload = await authRequest("/api/auth/request-otp", {
+        method: "POST",
+        body: JSON.stringify({ email, purpose: mode === "reset" ? "reset-password" : "verify-email" }),
+      });
+      setNotice(payload.message);
+    } catch (requestError) {
+      setError(requestError.message);
+    } finally {
+      setBusy(false);
+    }
+  };
+
   return (
     <main className="login-shell">
       <button type="button" className="login-back" onClick={onBack}>
-        <ArrowLeft size={16} /> Back to website
+        <ArrowLeft size={16} /> {t("backToWebsite")}
       </button>
       <form
         className="login-card"
-        onSubmit={(event) => {
-          event.preventDefault();
-          onLogin();
-        }}
+        onSubmit={submit}
       >
-        <div className="brand login-brand">
-          <div className="brand-mark">
-            <Sparkles size={17} />
-          </div>
-          <span>
-            vijetha<span className="brand-dot">.</span>
-          </span>
-        </div>
-        <p className="section-kicker">INSTITUTE WORKSPACE</p>
-        <h1>Welcome back.</h1>
-        <p>Use the demo details below to enter the JNVST preparation portal.</p>
-        <label>
-          Email
-          <input type="email" defaultValue="admin@vijetha.in" required />
-        </label>
-        <label>
-          Password
-          <input type="password" defaultValue="jnvst2027" required />
-        </label>
-        <button type="submit" className="button primary large">
-          Sign in to workspace <ArrowRight size={17} />
+        <BrandLogo className="login-brand" />
+        <LanguageSelector className="login-language-selector" />
+        <p className="section-kicker">{t("secureWorkspace").toUpperCase()}</p>
+        <h1>{mode === "login" ? t("welcomeBack") : title}</h1>
+        <p>{mode === "login" ? t("welcomeCopy") : copy}</p>
+        {mode === "register" ? (
+          <label>
+            Full name
+            <input autoComplete="name" value={name} onChange={(event) => setName(event.target.value)} minLength="2" maxLength="80" required />
+          </label>
+        ) : null}
+        {!["verify", "reset"].includes(mode) ? (
+          <label>
+            {t("email")}
+            <input type="email" autoComplete="email" value={email} onChange={(event) => setEmail(event.target.value)} maxLength="254" required />
+          </label>
+        ) : (
+          <div className="auth-email-chip"><Mail size={15} /> {email}</div>
+        )}
+        {["login", "register", "reset"].includes(mode) ? (
+          <label>
+            {mode === "reset" ? "New password" : t("password")}
+            <input
+              type="password"
+              autoComplete={mode === "login" ? "current-password" : "new-password"}
+              value={password}
+              onChange={(event) => setPassword(event.target.value)}
+              minLength="10"
+              maxLength="128"
+              required
+            />
+            {mode !== "login" ? <em>10+ characters with uppercase, lowercase, and a number.</em> : null}
+          </label>
+        ) : null}
+        {["register", "reset"].includes(mode) ? (
+          <label>
+            Confirm password
+            <input type="password" autoComplete="new-password" value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value)} minLength="10" maxLength="128" required />
+          </label>
+        ) : null}
+        {["verify", "reset"].includes(mode) ? (
+          <label>
+            Six-digit email code
+            <input className="otp-input" inputMode="numeric" autoComplete="one-time-code" pattern="[0-9]{6}" maxLength="6" value={code} onChange={(event) => setCode(event.target.value.replace(/\D/g, "").slice(0, 6))} required />
+          </label>
+        ) : null}
+        {error ? <div className="auth-alert error" role="alert"><AlertCircle size={17} /><span>{error}</span></div> : null}
+        {notice ? <div className="auth-alert success" role="status"><Check size={17} /><span>{notice}</span></div> : null}
+        <button type="submit" className="button primary large" disabled={busy || configured === false}>
+          {busy ? <RefreshCw className="spin" size={17} /> : mode === "register" ? <UserPlus size={17} /> : mode === "verify" ? <ShieldCheck size={17} /> : <LogIn size={17} />}
+          {busy ? "Please wait" : mode === "login" ? t("signInSecurely") : mode === "register" ? t("createAccount") : mode === "verify" ? "Verify and continue" : mode === "forgot" ? "Send reset code" : "Reset password"}
         </button>
-        <small>Demo access only · no credentials are stored</small>
+        {configured === false ? (
+          <button
+            type="button"
+            className="button demo-access-button"
+            onClick={() => onLogin({ id: "public-demo", name: "Amara Khan", email: "demo@vijetha.in", role: "teacher", demo: true })}
+          >
+            <ArrowRight size={17} /> {t("continueDemo")}
+          </button>
+        ) : null}
+        {["verify", "reset"].includes(mode) ? <button type="button" className="auth-text-button" onClick={resendCode} disabled={busy}>Resend email code</button> : null}
+        {mode === "login" ? (
+          <div className="auth-links">
+            <button type="button" onClick={() => changeMode("forgot")}>{t("forgotPassword")}</button>
+            <button type="button" onClick={() => changeMode("register")}>{t("createAccount")}</button>
+          </div>
+        ) : (
+          <button type="button" className="auth-text-button" onClick={() => changeMode("login")}>Back to sign in</button>
+        )}
+        <small><ShieldCheck size={13} /> {t("securityNotice")}</small>
       </form>
     </main>
   );
@@ -647,6 +1243,8 @@ function PageHeading({ kicker, title, copy, children }) {
 }
 
 function DashboardPage({
+  course,
+  user,
   students,
   fullTests,
   aggregation,
@@ -655,55 +1253,56 @@ function DashboardPage({
   onNavigate,
   onOpenTests,
 }) {
+  const { t, subject } = useI18n();
   return (
     <>
       <PageHeading
-        kicker="JNVST CLASS 6 · 2027 PREPARATION"
-        title="Good morning, Amara."
-        copy="Here is what needs your attention across Vijetha Institute."
+        kicker={`${course.shortName} ${course.className.toUpperCase()} · ${course.year} PREPARATION`}
+        title={t("goodMorning", { name: user.name.split(" ")[0] })}
+        copy={t("attentionCopy")}
       >
         <button
           type="button"
           className="button secondary"
           onClick={() => window.print()}
         >
-          <Printer size={16} /> Print overview
+          <Printer size={16} /> {t("printOverview")}
         </button>
-        <button type="button" className="button primary" onClick={onOpenTests}>
-          <CircleHelp size={16} /> Open full tests
+        <button type="button" className="button primary" onClick={() => onOpenTests()}>
+          <CircleHelp size={16} /> {t("openFullTests")}
         </button>
       </PageHeading>
       <section className="metric-grid">
         <Metric
           icon={Users}
-          label="Active students"
+          label={t("activeStudents")}
           value={students.length}
-          change="3 batches"
-          note="in preparation"
+          change={`3 ${t("batches")}`}
+          note={t("inPreparation")}
           color="teal"
         />
         <Metric
           icon={BookOpen}
-          label="JNVST syllabus"
+          label={`${course.shortName} syllabus`}
           value="100%"
-          change="2027"
-          note="supplied topic map"
+          change={String(course.year)}
+          note={t("officialTopicMap")}
           color="coral"
         />
         <Metric
           icon={ClipboardCheck}
-          label="Full tests"
+          label={t("openFullTests")}
           value={catalogStatus === "ready" ? fullTests.length : "—"}
-          change="10 / level"
-          note="80 questions each"
+          change={t("perLevel")}
+          note={t("questionsEach", { count: course.standard.questionsPerPaper })}
           color="gold"
         />
         <Metric
           icon={Zap}
-          label="Validated questions"
-          value={catalogStatus === "ready" ? "2,400" : "—"}
-          change="Testing DB"
-          note="unique content"
+          label={t("questionRecords")}
+          value={catalogStatus === "ready" ? (30 * course.standard.questionsPerPaper).toLocaleString("en-IN") : "—"}
+          change={`30 ${t("papers")}`}
+          note={t("syllabusAlignedBank")}
           color="ink"
         />
       </section>
@@ -711,24 +1310,36 @@ function DashboardPage({
         <section className="panel">
           <div className="panel-heading">
             <div>
-              <p className="section-kicker">STUDENT PULSE</p>
-              <h2>Progress overview</h2>
+              <p className="section-kicker">{t("studentPulse").toUpperCase()}</p>
+              <h2>{t("progressOverview")}</h2>
             </div>
             <button
               type="button"
               className="text-button"
               onClick={() => onNavigate("Students")}
             >
-              Manage students <ArrowUpRight size={15} />
+              {t("manageStudents")} <ArrowUpRight size={15} />
             </button>
           </div>
-          <StudentTable students={students} />
+          <StudentTable
+            students={students}
+            actions={(student) => (
+              <button
+                type="button"
+                className="row-menu"
+                aria-label={`Manage ${student.name}`}
+                onClick={() => onNavigate("Students")}
+              >
+                <MoreHorizontal size={17} />
+              </button>
+            )}
+          />
         </section>
         <section className="panel testing-card">
           <div className="panel-heading">
             <div>
-              <p className="section-kicker">TESTING DATABASE</p>
-              <h2>Validated full-test library</h2>
+              <p className="section-kicker">{t("testingDatabase").toUpperCase()}</p>
+              <h2>{t("fullTestLibrary")}</h2>
             </div>
             <Database size={20} />
           </div>
@@ -736,39 +1347,59 @@ function DashboardPage({
             {catalogStatus === "ready"
               ? `Live from ${dataSource}.`
               : "Connect the Testing database to load the catalog."}{" "}
-            Every paper follows 20 MAT + 20 EVS + 20 Arithmetic + 20 Language.
+            {t("paperContains")} {course.blueprint.map((section) => `${section.questionCount} ${subject(section.subject)}`).join(" + ")}.
           </p>
           <div className="level-grid">
             <Level
-              name="Easy"
+              name={t("easy")}
               count={
                 fullTests.filter((test) => test.level === "Easy").length || "—"
               }
-              range="80 questions · 100 marks"
+              range={`${course.standard.questionsPerPaper} ${t("questions")} · ${course.standard.marksPerPaper} ${t("marks")}`}
               color="mint"
+              onClick={() =>
+                onOpenTests(
+                  fullTests.find((test) => test.level === "Easy")?.id,
+                )
+              }
+              disabled={!fullTests.some((test) => test.level === "Easy")}
             />
             <Level
-              name="Medium"
+              name={t("medium")}
               count={
                 fullTests.filter((test) => test.level === "Medium").length ||
                 "—"
               }
-              range="80 questions · 100 marks"
+              range={`${course.standard.questionsPerPaper} ${t("questions")} · ${course.standard.marksPerPaper} ${t("marks")}`}
               color="peach"
+              onClick={() =>
+                onOpenTests(
+                  fullTests.find((test) => test.level === "Medium")?.id,
+                )
+              }
+              disabled={!fullTests.some((test) => test.level === "Medium")}
             />
             <Level
-              name="Challenging"
+              name={t("challenging")}
               count={
                 fullTests.filter((test) => test.level === "Challenging")
                   .length || "—"
               }
-              range="80 questions · 100 marks"
+              range={`${course.standard.questionsPerPaper} ${t("questions")} · ${course.standard.marksPerPaper} ${t("marks")}`}
               color="lemon"
+              onClick={() =>
+                onOpenTests(
+                  fullTests.find((test) => test.level === "Challenging")?.id,
+                )
+              }
+              disabled={!fullTests.some(
+                (test) => test.level === "Challenging",
+              )}
             />
           </div>
           <div className="library-footer">
             <div className="set-label">
-              <span>Questions loaded</span>
+              <span>{t("questionsLoaded")}</span>
               <b>
                 {aggregation.reduce(
                   (total, item) => total + item.questionCount,
@@ -777,7 +1408,7 @@ function DashboardPage({
               </b>
             </div>
             <div className="integrity-inline">
-              <ShieldCheck size={15} /> Syllabus structure locked
+              <ShieldCheck size={15} /> {t("structureLocked")}
             </div>
           </div>
         </section>
@@ -787,21 +1418,32 @@ function DashboardPage({
 }
 
 function StudentTable({ students, actions }) {
+  const { t } = useI18n();
+  const localizedState = (state) => ({
+    "On track": t("onTrack"),
+    "At risk": t("atRisk"),
+    "Needs review": t("needsReview"),
+  })[state] || state;
   return (
-    <div className="student-table">
+    <div className={`student-table${actions ? " has-actions" : ""}`}>
       <div className="table-head">
-        <span>Student</span>
-        <span>Batch</span>
-        <span>Completion</span>
-        <span>Status</span>
-        <span>Last active</span>
+        <span>{t("student")}</span>
+        <span>{t("batch")}</span>
+        <span>{t("completion")}</span>
+        <span>{t("status")}</span>
+        <span>{t("lastActive")}</span>
         <span />
       </div>
       {students.map((student) => (
         <div className="student-row" key={student.id}>
           <div className="student-name">
             <div className="avatar">{student.initials}</div>
-            <strong>{student.name}</strong>
+            <div>
+              <strong>{student.name}</strong>
+              {student.email || student.phone ? (
+                <small>{student.email || student.phone}</small>
+              ) : null}
+            </div>
           </div>
           <span className="muted">{student.batch}</span>
           <div className="completion">
@@ -810,7 +1452,7 @@ function StudentTable({ students, actions }) {
             </div>
             <b>{student.progress}%</b>
           </div>
-          <span className={`status ${student.tone}`}>{student.state}</span>
+          <span className={`status ${student.tone}`}>{localizedState(student.state)}</span>
           <span className="muted last-active">{student.last}</span>
           {actions ? actions(student) : <MoreHorizontal size={17} />}
         </div>
@@ -819,110 +1461,295 @@ function StudentTable({ students, actions }) {
   );
 }
 
-function StudentsPage({ students, setStudents }) {
+function StudentsPage({
+  students,
+  setStudents,
+  status,
+  error,
+  onRetry,
+  course,
+  batches,
+}) {
+  const courseBatches = useMemo(() => {
+    const matching = batches
+      .map((batch) => batch.name)
+      .filter((name) => name.toLowerCase().startsWith(course.shortName.toLowerCase()));
+    return matching.length
+      ? matching
+      : [
+          `${course.shortName} Morning A`,
+          `${course.shortName} Evening B`,
+          `${course.shortName} Weekend`,
+        ];
+  }, [batches, course.shortName]);
+  const newForm = () => ({
+    name: "",
+    email: "",
+    phone: "",
+    guardian: "",
+    guardianEmail: "",
+    guardianPhone: "",
+    batch: courseBatches[0],
+    progress: 0,
+  });
+  const [query, setQuery] = useState("");
+  const [formOpen, setFormOpen] = useState(false);
   const [editingId, setEditingId] = useState(null);
-  const [name, setName] = useState("");
-  const saveStudent = (event) => {
-    event.preventDefault();
-    const clean = name.trim();
-    if (!clean) return;
-    if (editingId)
-      setStudents((rows) =>
-        rows.map((row) =>
-          row.id === editingId
-            ? {
-                ...row,
-                name: clean,
-                initials: clean
-                  .split(/\s+/)
-                  .map((part) => part[0])
-                  .join("")
-                  .slice(0, 2)
-                  .toUpperCase(),
-              }
-            : row,
-        ),
-      );
-    else
-      setStudents((rows) => [
-        ...rows,
-        {
-          id: Date.now(),
-          name: clean,
-          initials: clean
-            .split(/\s+/)
-            .map((part) => part[0])
-            .join("")
-            .slice(0, 2)
-            .toUpperCase(),
-          batch: "JNVST Morning A",
-          progress: 0,
-          state: "New",
-          tone: "amber",
-          guardian: "Not added",
-          last: "Just now",
-        },
-      ]);
-    setName("");
+  const [form, setForm] = useState(newForm);
+  const [formError, setFormError] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [deleteId, setDeleteId] = useState(null);
+  const [deleting, setDeleting] = useState(false);
+
+  useEffect(() => {
+    setQuery("");
+    setFormOpen(false);
     setEditingId(null);
+    setDeleteId(null);
+    setForm(newForm());
+  }, [course.key]);
+
+  const filteredStudents = useMemo(() => {
+    const clean = query.trim().toLowerCase();
+    if (!clean) return students;
+    return students.filter((student) =>
+      [student.name, student.batch, student.guardian, student.email, student.phone]
+        .filter(Boolean)
+        .join(" ")
+        .toLowerCase()
+        .includes(clean),
+    );
+  }, [query, students]);
+
+  const updateField = (field, value) =>
+    setForm((current) => ({ ...current, [field]: value }));
+  const closeForm = () => {
+    setFormOpen(false);
+    setEditingId(null);
+    setFormError("");
+    setForm(newForm());
+  };
+  const startEdit = (student) => {
+    setEditingId(student.id);
+    setForm({
+      name: student.name,
+      email: student.email || "",
+      phone: student.phone || "",
+      guardian: student.guardian,
+      guardianEmail: student.guardianEmail || "",
+      guardianPhone: student.guardianPhone || "",
+      batch: student.batch,
+      progress: student.progress,
+    });
+    setFormError("");
+    setDeleteId(null);
+    setFormOpen(true);
+  };
+  const saveStudent = async (event) => {
+    event.preventDefault();
+    setSaving(true);
+    setFormError("");
+    try {
+      const path = editingId
+        ? `/api/students?id=${encodeURIComponent(editingId)}`
+        : "/api/students";
+      const payload = await authRequest(path, {
+        method: editingId ? "PATCH" : "POST",
+        body: JSON.stringify({ ...form, progress: Number(form.progress), course: course.key }),
+      });
+      setStudents((rows) =>
+        editingId
+          ? rows.map((row) => (row.id === editingId ? payload.student : row))
+          : [...rows, payload.student].sort((a, b) => a.name.localeCompare(b.name)),
+      );
+      closeForm();
+    } catch (requestError) {
+      setFormError(requestError.message || "The student could not be saved.");
+    } finally {
+      setSaving(false);
+    }
+  };
+  const removeStudent = async (student) => {
+    setDeleting(true);
+    setFormError("");
+    try {
+      await authRequest(`/api/students?id=${encodeURIComponent(student.id)}`, {
+        method: "DELETE",
+      });
+      setStudents((rows) => rows.filter((row) => row.id !== student.id));
+      setDeleteId(null);
+      if (editingId === student.id) closeForm();
+    } catch (requestError) {
+      setFormError(requestError.message || "The student could not be removed.");
+    } finally {
+      setDeleting(false);
+    }
   };
   return (
     <>
       <PageHeading
         kicker="STUDENT MANAGEMENT"
         title="Students"
-        copy="Add, update, and monitor every JNVST learner."
+        copy={`Add, update, and monitor every ${course.shortName} learner.`}
       >
-        <form className="inline-form" onSubmit={saveStudent}>
-          <label className="sr-only" htmlFor="student-name">
-            Student name
+        <div className="student-toolbar">
+          <label className="student-search">
+            <Search size={16} />
+            <span className="sr-only">Search students</span>
+            <input
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+              placeholder="Search students"
+            />
           </label>
-          <input
-            id="student-name"
-            value={name}
-            onChange={(event) => setName(event.target.value)}
-            placeholder="Student name"
-          />
-          <button type="submit" className="button primary">
-            <UserPlus size={16} /> {editingId ? "Save student" : "Add student"}
+          <button
+            type="button"
+            className="button primary"
+            onClick={() => {
+              setEditingId(null);
+              setForm(newForm());
+              setFormError("");
+              setDeleteId(null);
+              setFormOpen(true);
+            }}
+          >
+            <UserPlus size={16} /> Add student
           </button>
-        </form>
+        </div>
       </PageHeading>
-      <section className="panel">
-        <StudentTable
-          students={students}
-          actions={(student) => (
-            <div className="row-actions">
-              <button
-                type="button"
-                aria-label={`Edit ${student.name}`}
-                onClick={() => {
-                  setEditingId(student.id);
-                  setName(student.name);
-                }}
-              >
-                <Pencil size={15} />
-              </button>
-              <button
-                type="button"
-                aria-label={`Remove ${student.name}`}
-                onClick={() =>
-                  setStudents((rows) =>
-                    rows.filter((row) => row.id !== student.id),
-                  )
-                }
-              >
-                <Trash2 size={15} />
+      {formOpen ? (
+        <section className="panel student-form-panel" aria-label={editingId ? "Edit student" : "Add student"}>
+          <div className="panel-heading compact-heading">
+            <div>
+              <span>{editingId ? "EDIT STUDENT" : "NEW STUDENT"}</span>
+              <h2>{editingId ? `Update ${form.name}` : `Add a ${course.shortName} learner`}</h2>
+            </div>
+            <button type="button" className="icon-button" aria-label="Close student form" onClick={closeForm}>
+              <X size={17} />
+            </button>
+          </div>
+          <form className="student-form" onSubmit={saveStudent}>
+            <div className="form-grid student-form-grid">
+              <label>
+                Student name <span>Required</span>
+                <input required minLength={2} maxLength={80} value={form.name} onChange={(event) => updateField("name", event.target.value)} />
+              </label>
+              <label>
+                Batch <span>Required</span>
+                <select required value={form.batch} onChange={(event) => updateField("batch", event.target.value)}>
+                  {!courseBatches.includes(form.batch) && <option value={form.batch}>{form.batch}</option>}
+                  {courseBatches.map((batch) => <option key={batch} value={batch}>{batch}</option>)}
+                </select>
+              </label>
+              <label>
+                Student email <span>Optional</span>
+                <input type="email" maxLength={254} value={form.email} onChange={(event) => updateField("email", event.target.value)} placeholder="student@example.com" />
+              </label>
+              <label>
+                Student phone <span>Optional</span>
+                <input type="tel" maxLength={20} value={form.phone} onChange={(event) => updateField("phone", event.target.value)} placeholder="+91 98765 43210" />
+              </label>
+              <label>
+                Guardian name <span>Required</span>
+                <input required minLength={2} maxLength={80} value={form.guardian} onChange={(event) => updateField("guardian", event.target.value)} />
+              </label>
+              <label>
+                Completion <span>{form.progress}%</span>
+                <input type="range" min="0" max="100" value={form.progress} onChange={(event) => updateField("progress", event.target.value)} />
+              </label>
+              <label>
+                Guardian email <span>Optional</span>
+                <input type="email" maxLength={254} value={form.guardianEmail} onChange={(event) => updateField("guardianEmail", event.target.value)} placeholder="guardian@example.com" />
+              </label>
+              <label>
+                Guardian phone <span>Optional</span>
+                <input type="tel" maxLength={20} value={form.guardianPhone} onChange={(event) => updateField("guardianPhone", event.target.value)} placeholder="+91 98765 43210" />
+              </label>
+            </div>
+            {formError ? <div className="auth-alert error" role="alert"><AlertCircle size={15} /> {formError}</div> : null}
+            <div className="form-actions">
+              <button type="button" className="button secondary" onClick={closeForm} disabled={saving}>Cancel</button>
+              <button type="submit" className="button primary" disabled={saving}>
+                {saving ? <RefreshCw className="spin" size={16} /> : <Check size={16} />}
+                {saving ? "Saving…" : editingId ? "Save changes" : "Add student"}
               </button>
             </div>
-          )}
-        />
+          </form>
+        </section>
+      ) : null}
+      <section className="panel">
+        {status === "loading" ? (
+          <div className="student-state"><RefreshCw className="spin" size={24} /><strong>Loading students…</strong><span>Fetching this course roster securely.</span></div>
+        ) : status === "error" ? (
+          <div className="student-state error-state"><AlertCircle size={24} /><strong>Students could not be loaded</strong><span>{error}</span><button type="button" className="button secondary" onClick={onRetry}>Try again</button></div>
+        ) : filteredStudents.length ? (
+          <StudentTable
+            students={filteredStudents}
+            actions={(student) => (
+              <div className="row-actions">
+                {deleteId === student.id ? (
+                  <div className="delete-confirm" role="group" aria-label={`Confirm removal of ${student.name}`}>
+                    <button type="button" onClick={() => setDeleteId(null)} disabled={deleting}>Cancel</button>
+                    <button type="button" onClick={() => removeStudent(student)} disabled={deleting}>{deleting ? "Removing…" : "Delete"}</button>
+                  </div>
+                ) : (
+                  <>
+                    <button type="button" aria-label={`Edit ${student.name}`} onClick={() => startEdit(student)}><Pencil size={15} /></button>
+                    <button type="button" aria-label={`Remove ${student.name}`} onClick={() => { setDeleteId(student.id); setFormError(""); }}><Trash2 size={15} /></button>
+                  </>
+                )}
+              </div>
+            )}
+          />
+        ) : (
+          <div className="student-state">
+            <Users size={26} />
+            <strong>{query ? "No matching students" : `No ${course.shortName} students yet`}</strong>
+            <span>{query ? "Try a different name, batch, guardian, email, or phone." : "Use Add student to create the first learner record."}</span>
+          </div>
+        )}
       </section>
     </>
   );
 }
 
-function ClassesPage() {
+function ClassesPage({ batches, setBatches }) {
+  const emptyForm = {
+    name: "",
+    mentor: "",
+    students: 0,
+    schedule: "Mon–Fri · 7:00 AM",
+    next: "Mental Ability · Pattern Completion",
+  };
+  const [formOpen, setFormOpen] = useState(false);
+  const [form, setForm] = useState(emptyForm);
+  const [selectedName, setSelectedName] = useState("");
+  const selectedBatch = batches.find((batch) => batch.name === selectedName);
+  const updateField = (field, value) =>
+    setForm((current) => ({ ...current, [field]: value }));
+  const createBatch = (event) => {
+    event.preventDefault();
+    const cleanName = form.name.trim();
+    const cleanMentor = form.mentor.trim();
+    if (!cleanName || !cleanMentor) return;
+    const uniqueName = batches.some(
+      (batch) => batch.name.toLowerCase() === cleanName.toLowerCase(),
+    )
+      ? `${cleanName} ${batches.length + 1}`
+      : cleanName;
+    setBatches((current) => [
+      ...current,
+      {
+        ...form,
+        name: uniqueName,
+        mentor: cleanMentor,
+        students: Number(form.students) || 0,
+      },
+    ]);
+    setForm(emptyForm);
+    setFormOpen(false);
+    setSelectedName(uniqueName);
+  };
   return (
     <>
       <PageHeading
@@ -930,12 +1757,84 @@ function ClassesPage() {
         title="Classes"
         copy="Keep teaching plans connected to the unchanged JNVST syllabus."
       >
-        <button type="button" className="button primary">
+        <button
+          type="button"
+          className="button primary"
+          aria-expanded={formOpen}
+          onClick={() => setFormOpen((open) => !open)}
+        >
           <Plus size={16} /> Create batch
         </button>
       </PageHeading>
+      {formOpen ? (
+        <form className="panel batch-form" onSubmit={createBatch}>
+          <div className="panel-heading">
+            <div>
+              <p className="section-kicker">NEW CLASS</p>
+              <h2>Create a teaching batch</h2>
+            </div>
+            <button
+              type="button"
+              className="icon-button"
+              aria-label="Close create batch form"
+              onClick={() => setFormOpen(false)}
+            >
+              <X size={18} />
+            </button>
+          </div>
+          <div className="form-grid">
+            <label>
+              Batch name
+              <input required value={form.name} onChange={(event) => updateField("name", event.target.value)} placeholder="AISSEE Evening A" />
+            </label>
+            <label>
+              Mentor
+              <input required value={form.mentor} onChange={(event) => updateField("mentor", event.target.value)} placeholder="Mentor name" />
+            </label>
+            <label>
+              Students
+              <input type="number" min="0" value={form.students} onChange={(event) => updateField("students", event.target.value)} />
+            </label>
+            <label>
+              Schedule
+              <input required value={form.schedule} onChange={(event) => updateField("schedule", event.target.value)} />
+            </label>
+            <label className="form-span">
+              Next lesson
+              <input required value={form.next} onChange={(event) => updateField("next", event.target.value)} />
+            </label>
+          </div>
+          <div className="form-actions">
+            <button type="button" className="button secondary" onClick={() => setFormOpen(false)}>Cancel</button>
+            <button type="submit" className="button primary"><Plus size={15} /> Save batch</button>
+          </div>
+        </form>
+      ) : null}
+      {selectedBatch ? (
+        <section className="panel batch-detail" aria-live="polite">
+          <div>
+            <p className="section-kicker">SELECTED CLASS</p>
+            <h2>{selectedBatch.name}</h2>
+            <p>{selectedBatch.mentor} · {selectedBatch.students} students · {selectedBatch.schedule}</p>
+            <strong>Next lesson: {selectedBatch.next}</strong>
+          </div>
+          <div className="form-actions">
+            <button
+              type="button"
+              className="button secondary danger-button"
+              onClick={() => {
+                setBatches((current) => current.filter((batch) => batch.name !== selectedBatch.name));
+                setSelectedName("");
+              }}
+            >
+              <Trash2 size={15} /> Remove batch
+            </button>
+            <button type="button" className="icon-button" aria-label="Close class details" onClick={() => setSelectedName("")}><X size={18} /></button>
+          </div>
+        </section>
+      ) : null}
       <div className="batch-grid">
-        {BATCHES.map((batch) => (
+        {batches.map((batch) => (
           <article className="panel batch-card" key={batch.name}>
             <div className="batch-icon">
               <GraduationCap size={20} />
@@ -953,7 +1852,11 @@ function ClassesPage() {
                 <dd>{batch.next}</dd>
               </div>
             </dl>
-            <button type="button" className="button secondary">
+            <button
+              type="button"
+              className="button secondary"
+              onClick={() => setSelectedName(batch.name)}
+            >
               View class <ArrowRight size={15} />
             </button>
           </article>
@@ -966,9 +1869,9 @@ function ClassesPage() {
             <h2>Class schedule</h2>
           </div>
         </div>
-        {BATCHES.map((batch, index) => (
+        {batches.map((batch, index) => (
           <div className="schedule-row" key={batch.name}>
-            <time>{["MON 07:00", "WED 17:30", "SAT 09:00"][index]}</time>
+            <time>{batch.schedule.split(" · ").join(" ")}</time>
             <strong>{batch.next}</strong>
             <span>{batch.name}</span>
             <b>{batch.mentor}</b>
@@ -979,7 +1882,72 @@ function ClassesPage() {
   );
 }
 
-function MockTestsPage({ tests, status, error, dataSource, onRetry, onOpen }) {
+function SettingsPage({ course, onCourseChange }) {
+  const [instituteName, setInstituteName] = useState("Vijetha Institute");
+  const [email, setEmail] = useState("admin@vijetha.in");
+  const [saved, setSaved] = useState(false);
+  const saveSettings = (event) => {
+    event.preventDefault();
+    setSaved(true);
+  };
+  return (
+    <>
+      <PageHeading
+        kicker="WORKSPACE PREFERENCES"
+        title="Settings"
+        copy="Manage the demo institute identity and default entrance-exam workspace."
+      />
+      <form className="panel settings-form" onSubmit={saveSettings}>
+        <div className="panel-heading">
+          <div>
+            <p className="section-kicker">GENERAL</p>
+            <h2>Institute workspace</h2>
+          </div>
+          {saved ? <span className="save-confirmation"><Check size={14} /> Saved</span> : null}
+        </div>
+        <div className="form-grid">
+          <label>
+            Institute name
+            <input required value={instituteName} onChange={(event) => { setInstituteName(event.target.value); setSaved(false); }} />
+          </label>
+          <label>
+            Administrator email
+            <input type="email" required value={email} onChange={(event) => { setEmail(event.target.value); setSaved(false); }} />
+          </label>
+          <label>
+            Default course
+            <select value={course.key} onChange={(event) => onCourseChange(event.target.value)}>
+              {Object.values(EXAM_COURSES).map((item) => <option key={item.key} value={item.key}>{item.shortName} · {item.className}</option>)}
+            </select>
+          </label>
+          <label>
+            Test delivery
+            <select defaultValue="OMR practice runner">
+              <option>OMR practice runner</option>
+              <option>Printable paper</option>
+            </select>
+          </label>
+        </div>
+        <div className="form-actions">
+          <button
+            type="button"
+            className="button secondary"
+            onClick={() => {
+              setInstituteName("Vijetha Institute");
+              setEmail("admin@vijetha.in");
+              setSaved(false);
+            }}
+          >
+            Reset
+          </button>
+          <button type="submit" className="button primary"><Check size={15} /> Save settings</button>
+        </div>
+      </form>
+    </>
+  );
+}
+
+function MockTestsPage({ course, tests, status, error, dataSource, onRetry, onOpen }) {
   const groups = EXPECTED_LEVELS.map((level) => ({
     level,
     tests: tests.filter((test) => test.level === level),
@@ -987,9 +1955,9 @@ function MockTestsPage({ tests, status, error, dataSource, onRetry, onOpen }) {
   return (
     <>
       <PageHeading
-        kicker="30 FULL PRACTICE PAPERS"
-        title="Mock tests"
-        copy="Ten Easy, ten Medium, and ten Challenging papers—each with the standard 80-question blueprint."
+        kicker={`${course.shortName} · 30 FULL PRACTICE PAPERS`}
+        title={`${course.shortName} mock tests`}
+        copy={`Ten Easy, ten Medium, and ten Challenging papers—each following the ${course.standard.questionsPerPaper}-question ${course.shortName} Class VI blueprint.`}
       >
         <button
           type="button"
@@ -1039,7 +2007,7 @@ function MockTestsPage({ tests, status, error, dataSource, onRetry, onOpen }) {
                 <div>
                   <span>{group.level.toUpperCase()}</span>
                   <h3>{group.tests.length || 10} full tests</h3>
-                  <p>800 questions · 1,000 marks total</p>
+                  <p>{(course.standard.questionsPerPaper * 10).toLocaleString("en-IN")} questions · {(course.standard.marksPerPaper * 10).toLocaleString("en-IN")} marks total</p>
                 </div>
                 <button
                   type="button"
@@ -1105,7 +2073,7 @@ function ProgressPage({ students }) {
         <Metric
           icon={AlertCircle}
           label="Needs attention"
-          value={students.filter((student) => student.progress < 65).length}
+          value={students.filter((student) => student.progress < 70).length}
           change="Priority"
           note="follow-up list"
           color="coral"
@@ -1152,7 +2120,7 @@ function ProgressPage({ students }) {
             </div>
           </div>
           {students
-            .filter((student) => student.progress < 75)
+            .filter((student) => student.progress < 70)
             .map((student) => (
               <div key={student.id}>
                 <div className="avatar">{student.initials}</div>
@@ -1256,33 +2224,36 @@ function ParentsPage({ students }) {
   );
 }
 
-function SyllabusPage() {
+function SyllabusPage({ course }) {
+  const marksPerQuestion = new Set(
+    course.blueprint.map((section) => section.marks / section.questionCount),
+  );
   return (
     <>
       <PageHeading
-        kicker="SUPPLIED DOCUMENT · UNCHANGED"
-        title="JNVST Class 6 syllabus"
-        copy="The application uses the same 2027 syllabus and exam structure; this screen makes every mapped component visible."
+        kicker={course.sourceType.toUpperCase()}
+        title={`${course.shortName} ${course.className} syllabus`}
+        copy={course.coverageNote}
       />
       <section className="standard-banner">
         <div>
-          <strong>{JNVST_STANDARD.questionsPerPaper}</strong>
+          <strong>{course.standard.questionsPerPaper}</strong>
           <span>questions</span>
         </div>
         <div>
-          <strong>{JNVST_STANDARD.marksPerPaper}</strong>
+          <strong>{course.standard.marksPerPaper}</strong>
           <span>marks</span>
         </div>
         <div>
-          <strong>{JNVST_STANDARD.durationMinutes}</strong>
+          <strong>{course.standard.durationMinutes}</strong>
           <span>minutes</span>
         </div>
         <div>
-          <strong>+{JNVST_STANDARD.marksPerCorrectAnswer}</strong>
+          <strong>{marksPerQuestion.size === 1 ? `+${[...marksPerQuestion][0]}` : "Variable"}</strong>
           <span>correct answer</span>
         </div>
         <div>
-          <strong>0</strong>
+          <strong>{course.standard.negativeMarking}</strong>
           <span>negative marking</span>
         </div>
         <div>
@@ -1291,13 +2262,12 @@ function SyllabusPage() {
         </div>
       </section>
       <div className="syllabus-grid">
-        {JNVST_BLUEPRINT.map((section) => (
+        {course.blueprint.map((section) => (
           <article className="panel syllabus-card" key={section.key}>
             <div className="syllabus-card-head">
               <span>{section.section}</span>
               <b>
-                {section.questionCount} Q · {section.marks} marks ·{" "}
-                {section.durationMinutes} min
+                {section.questionCount} Q · {section.marks} marks
               </b>
             </div>
             <h2>{section.subject}</h2>
@@ -1306,13 +2276,13 @@ function SyllabusPage() {
                 <span key={topic}>{topic}</span>
               ))}
             </div>
-            {section.key === "mental" ? (
+            {course.key === "jnvst" && section.key === "mental" ? (
               <p>
                 Five parts × four questions:{" "}
                 {MAT_SECTION_PLAN.map((item) => item.subtopic).join(" · ")}
               </p>
             ) : null}
-            {section.key === "arithmetic" ? (
+            {course.key === "jnvst" && section.key === "arithmetic" ? (
               <p>
                 Detailed coverage:{" "}
                 {ARITHMETIC_SECTION_PLAN.map((item) => item.subtopic).join(
@@ -1320,12 +2290,12 @@ function SyllabusPage() {
                 )}
               </p>
             ) : null}
-            {section.key === "language" ? (
+            {course.key === "jnvst" && section.key === "language" ? (
               <p>
                 Four passages × five questions: {LANGUAGE_SKILLS.join(" · ")}
               </p>
             ) : null}
-            {section.key === "evs" ? (
+            {course.key === "jnvst" && section.key === "evs" ? (
               <p>
                 15 standalone questions + one study passage with five questions;
                 20 distinct topics per paper.
@@ -1334,16 +2304,6 @@ function SyllabusPage() {
           </article>
         ))}
       </div>
-      <section className="panel rule-panel">
-        <ShieldCheck size={22} />
-        <div>
-          <h2>Exam rules retained</h2>
-          <p>
-            Section 1 qualifying mark: 14 · Arithmetic: 7 · Language: 7 ·
-            Divyang candidates: 40 additional minutes · No negative marking.
-          </p>
-        </div>
-      </section>
     </>
   );
 }
@@ -1363,9 +2323,15 @@ function Metric({ icon: Icon, label, value, change, note, color }) {
     </div>
   );
 }
-function Level({ name, count, range, color }) {
+function Level({ name, count, range, color, onClick, disabled = false }) {
   return (
-    <button className={`level-card ${color}`}>
+    <button
+      type="button"
+      className={`level-card ${color}`}
+      onClick={onClick}
+      disabled={disabled}
+      aria-label={`Open ${name} full tests`}
+    >
       <div className="level-orbit">
         <strong>{count}</strong>
         <small>tests</small>
@@ -1420,9 +2386,12 @@ function FigureGraphic({ figure, size = 46 }) {
   return (
     <svg
       className="figure-graphic"
+      xmlns="http://www.w3.org/2000/svg"
       width={size}
       height={size}
       viewBox="0 0 64 64"
+      preserveAspectRatio="xMidYMid meet"
+      focusable="false"
       role="img"
       aria-label={shape}
     >
@@ -1570,22 +2539,208 @@ function QuestionStimulus({ stimulus }) {
   );
 }
 
+function PrintPaper({ course, test }) {
+  const { locale, t, text, subject } = useI18n();
+  const negativeMarking = Number(course.standard.negativeMarking || 0);
+  const printPattern = course.printPattern || {};
+  const printSections = printPattern.sections || course.blueprint.map((section) => ({
+    section: section.section,
+    subject: section.subject,
+    questions: section.questionCount,
+    marksEach: section.marks / section.questionCount,
+    marks: section.marks,
+    duration: section.durationMinutes ? `${section.durationMinutes} min` : "—",
+    qualifying: "—",
+  }));
+  const instructions = (printPattern.instructions || [
+    "Attempt every question and mark only one option for each question.",
+    "Use the response sheet at the end of this paper for your final responses.",
+    `Each section follows the published ${course.shortName} Class VI paper structure.`,
+  ]).map((instruction) => text(instruction));
+  const responsePageSize = test.questions.length > 125 ? 100 : test.questions.length;
+  const responsePages = Array.from(
+    { length: Math.ceil(test.questions.length / responsePageSize) },
+    (_, pageIndex) =>
+      test.questions.slice(
+        pageIndex * responsePageSize,
+        (pageIndex + 1) * responsePageSize,
+      ),
+  );
+
+  return (
+    <div className="runner-print-bank" aria-hidden="true">
+      <header className="print-paper-header">
+        <div>
+          <span>VIJETHA INSTITUTE · {t("fullTest").toUpperCase()}</span>
+          <h1>{course.name}</h1>
+          <p>{course.className} · {course.year} · {t("practiceEdition")} · {locale.toUpperCase()}</p>
+        </div>
+        <div className="print-paper-code">
+          <strong>{test.id}</strong>
+          <span>{t(test.level.toLowerCase())}</span>
+        </div>
+      </header>
+
+      <section className="print-candidate-fields">
+        <span>{t("candidateName")}: ______________________________</span>
+        <span>{t("rollNumber")}: __________________</span>
+        <span>{t("bookletCode")}: A / B / C / D</span>
+        <span>{t("candidateSignature")}: ______________________</span>
+        <span>{t("invigilatorSignature")}: __________________</span>
+        <span>{t("date")}: ________________</span>
+      </section>
+
+      <section className="print-paper-summary">
+        <div><strong>{test.questionCount}</strong><span>{t("questions")}</span></div>
+        <div><strong>{test.totalMarks}</strong><span>{t("marks")}</span></div>
+        <div><strong>{test.durationMinutes} min</strong><span>{t("minutes")}</span></div>
+        <div><strong>{negativeMarking ? `−${negativeMarking}` : t("none")}</strong><span>{t("negativeMarking")}</span></div>
+      </section>
+
+      <section className="print-instructions">
+        <h2>{t("instructions")}</h2>
+        <ol>
+          {instructions.map((instruction) => (
+            <li key={instruction}>{instruction}</li>
+          ))}
+        </ol>
+      </section>
+
+      <table className="print-section-table">
+        <thead>
+          <tr>
+            <th>{t("section")}</th><th>{t("subject")}</th><th>{t("range")}</th><th>{t("questions")}</th>
+            <th>{t("marksEach")}</th><th>{t("marks")}</th><th>{t("duration")}</th><th>{t("qualifying")}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {printSections.map((section) => (
+            <tr key={`${section.section}-${section.subject}`}>
+              <td>{section.section}</td>
+              <td>{subject(section.subject)}</td>
+              <td>{section.range || "—"}</td>
+              <td>{section.questions}</td>
+              <td>{section.marksEach}</td>
+              <td>{section.marks}</td>
+              <td>{section.duration}</td>
+              <td>{section.qualifying}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+
+      <p className="print-practice-notice">
+        {t("practiceNotice")}
+      </p>
+
+      {course.blueprint.map((section) => {
+        const questions = test.questions.filter(
+          (item) => item.subject === section.subject,
+        );
+        return (
+          <section className="print-question-section" key={section.key}>
+            <header>
+              <span>{section.section}</span>
+              <h2>{subject(section.subject)}</h2>
+              <p>
+                {t("question")} {questions[0]?.questionNumber}–{questions.at(-1)?.questionNumber}
+                {" · "}{section.questionCount} {t("questions")} · {section.marks} {t("marks")}
+              </p>
+            </header>
+            {questions.map((item, index) => {
+              const previous = questions[index - 1];
+              const showPassage =
+                item.passageId && item.passageId !== previous?.passageId;
+              return (
+                <article
+                  className="print-question"
+                  data-question-id={item.questionId}
+                  key={item.questionId}
+                >
+                  {showPassage ? (
+                    <div className="print-passage">
+                      <strong>{t("instructions")}</strong>
+                      <p>{item.passage}</p>
+                    </div>
+                  ) : null}
+                  <div className="print-question-heading">
+                    <b>{item.questionNumber}.</b>
+                    <div>
+                      <h3>{item.text}</h3>
+                      <small>{item.topicLabel || text(item.topic)}</small>
+                    </div>
+                    <em>{item.marks || 1} mark{Number(item.marks || 1) === 1 ? "" : "s"}</em>
+                  </div>
+                  {item.stimulus ? (
+                    <QuestionStimulus stimulus={item.stimulus} />
+                  ) : null}
+                  <ol className="print-options" type="A">
+                    {item.options.map((option) => (
+                      <li key={option.id}>
+                        {option.figure ? (
+                          <FigureGraphic figure={option.figure} size={42} />
+                        ) : (
+                          option.label
+                        )}
+                      </li>
+                    ))}
+                  </ol>
+                </article>
+              );
+            })}
+          </section>
+        );
+      })}
+
+      {responsePages.map((responseQuestions, pageIndex) => (
+        <section className="print-answer-sheet" key={`response-page-${pageIndex + 1}`}>
+          <header>
+            <span>{t("responseSheet").toUpperCase()} · OMR</span>
+            <h2>{course.shortName} · {test.id}</h2>
+            <p>
+              {t("responseSheetHelp")}
+              {responsePages.length > 1
+                ? ` Sheet ${pageIndex + 1} of ${responsePages.length} · Questions ${responseQuestions[0].questionNumber}–${responseQuestions.at(-1).questionNumber}`
+                : ""}
+            </p>
+          </header>
+          <div>
+            {responseQuestions.map((item) => (
+              <span key={`response-${item.questionId}`}>
+                <b>{item.questionNumber}</b> ○ A&nbsp;&nbsp;○ B&nbsp;&nbsp;○ C&nbsp;&nbsp;○ D
+              </span>
+            ))}
+          </div>
+        </section>
+      ))}
+    </div>
+  );
+}
+
 function TestStudio({
+  course,
   testCatalog,
   selectedTest,
   setSelectedTest,
   status,
   error,
   onRetry,
+  onLoadTest,
+  testLoadStatus,
+  testLoadError,
   close,
 }) {
+  const { locale, t, text, subject, test: localizeTest } = useI18n();
   const [levelFilter, setLevelFilter] = useState("All levels");
   const [currentIndex, setCurrentIndex] = useState(0);
   const [answers, setAnswers] = useState({});
   const [checked, setChecked] = useState(new Set());
   const [bookmarked, setBookmarked] = useState(new Set());
-  const [remainingSeconds, setRemainingSeconds] = useState(7200);
+  const [remainingSeconds, setRemainingSeconds] = useState(
+    course.standard.durationMinutes * 60,
+  );
   const [submitted, setSubmitted] = useState(false);
+  const [printPreparing, setPrintPreparing] = useState(false);
   const testMap = useMemo(
     () => new Map(testCatalog.map((item) => [item.id, item])),
     [testCatalog],
@@ -1597,18 +2752,25 @@ function TestStudio({
       ),
     [levelFilter, testCatalog],
   );
-  const test = testMap.get(selectedTest);
+  const sourceTest = testMap.get(selectedTest);
+  const test = useMemo(
+    () => (sourceTest ? localizeTest(sourceTest) : sourceTest),
+    [sourceTest, localizeTest, locale],
+  );
   const question = test?.questions[currentIndex];
   const answeredCount = Object.keys(answers).length;
   const score = test
-    ? test.questions.filter((item) => answers[item.questionId] === item.answer)
-        .length
+    ? test.questions.reduce(
+        (total, item) =>
+          total + (answers[item.questionId] === item.answer ? item.marks || 1 : 0),
+        0,
+      )
     : 0;
   const coverage = useMemo(
     () =>
       test
         ? Object.fromEntries(
-            JNVST_BLUEPRINT.map((section) => [
+            course.blueprint.map((section) => [
               section.subject,
               new Set(
                 test.questions
@@ -1618,7 +2780,7 @@ function TestStudio({
             ]),
           )
         : {},
-    [test],
+    [course, test],
   );
 
   useEffect(() => {
@@ -1626,9 +2788,9 @@ function TestStudio({
     setAnswers({});
     setChecked(new Set());
     setBookmarked(new Set());
-    setRemainingSeconds(7200);
+    setRemainingSeconds(course.standard.durationMinutes * 60);
     setSubmitted(false);
-  }, [selectedTest]);
+  }, [course, selectedTest]);
 
   useEffect(() => {
     if (!test || submitted) return undefined;
@@ -1648,9 +2810,13 @@ function TestStudio({
 
   const openTest = (testId) => {
     setSelectedTest(testId);
+    onLoadTest(testId);
   };
 
-  const goTo = (index) => setCurrentIndex(Math.max(0, Math.min(79, index)));
+  const goTo = (index) =>
+    setCurrentIndex(
+      Math.max(0, Math.min(course.standard.questionsPerPaper - 1, index)),
+    );
   const formatTime = (seconds) =>
     `${String(Math.floor(seconds / 3600)).padStart(2, "0")}:${String(Math.floor((seconds % 3600) / 60)).padStart(2, "0")}:${String(seconds % 60).padStart(2, "0")}`;
   const chooseOption = (optionId) => {
@@ -1681,46 +2847,85 @@ function TestStudio({
         : next.add(question.questionId);
       return next;
     });
+  const printCompletePaper = async () => {
+    if (printPreparing) return;
+    setPrintPreparing(true);
+    const originalTitle = document.title;
+    const printableTitle = `${course.shortName}-${test.id}-${locale.toUpperCase()}-Full-Practice-Paper`;
+    let restored = false;
+    const restoreTitle = () => {
+      if (restored) return;
+      restored = true;
+      document.title = originalTitle;
+      window.removeEventListener("afterprint", restoreTitle);
+    };
+
+    try {
+      document.title = printableTitle;
+      if (document.fonts?.ready) await document.fonts.ready;
+      await Promise.all(
+        [...document.images].map((image) =>
+          image.complete
+            ? Promise.resolve()
+            : new Promise((resolve) => {
+                image.addEventListener("load", resolve, { once: true });
+                image.addEventListener("error", resolve, { once: true });
+              }),
+        ),
+      );
+      await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+      window.addEventListener("afterprint", restoreTitle, { once: true });
+      window.print();
+      window.setTimeout(restoreTitle, 60000);
+    } finally {
+      setPrintPreparing(false);
+    }
+  };
   const revealAnswer =
     submitted || (question && checked.has(question.questionId));
+
+  useEffect(() => {
+    document.body.classList.toggle("print-runner-active", Boolean(test));
+    return () => document.body.classList.remove("print-runner-active");
+  }, [test]);
 
   return (
     <div
       className={`catalog-overlay ${test ? "runner-mode" : ""}`}
       role="dialog"
       aria-modal="true"
-      aria-label="JNVST full practice tests"
+      aria-label={`${course.shortName} full practice tests`}
     >
       <section className={`catalog-panel ${test ? "runner-panel" : ""}`}>
         <div className="catalog-header">
           <div>
-            <p className="section-kicker">JNVST CLASS 6 · 2027</p>
+            <p className="section-kicker">{course.shortName} {course.className.toUpperCase()} · {course.year}</p>
             <h2>
               {test
                 ? `${test.id} · ${test.level}`
-                : "30 new full practice tests"}
+                : t("newFullPracticeTests", { count: 30 })}
             </h2>
             <p>
               {test
-                ? `${test.subject} · 80 questions · 100 marks · 2 hours`
-                : "10 Easy · 10 Medium · 10 Challenging · Testing database"}
+                ? `${test.subject} · ${test.questionCount} questions · ${test.totalMarks} marks · ${test.durationMinutes} minutes`
+                : t("levelSummary")}
             </p>
           </div>
           <button
             type="button"
             className="icon-button"
             onClick={close}
-            aria-label="Close test studio"
+            aria-label={t("closeTestStudio")}
           >
             <X size={19} />
           </button>
         </div>
 
-        {status === "loading" && testCatalog.length === 0 ? (
+        {status === "loading" ? (
           <div className="catalog-state">
             <RefreshCw className="spin" size={25} />
-            <h3>Loading the Testing database</h3>
-            <p>Reading the authored and validated JNVST question module.</p>
+            <h3>{t("loadingDatabase")}</h3>
+            <p>{t("readingQuestionModule", { course: course.shortName })}</p>
           </div>
         ) : status === "error" ? (
           <div className="catalog-state error-state">
@@ -1731,6 +2936,17 @@ function TestStudio({
               <RefreshCw size={15} /> Retry Testing
             </button>
           </div>
+        ) : selectedTest && (!question || testLoadStatus === "loading") ? (
+          <div className={`catalog-state ${testLoadStatus === "error" ? "error-state" : ""}`}>
+            {testLoadStatus === "error" ? <AlertCircle size={28} /> : <RefreshCw className="spin" size={25} />}
+            <h3>{testLoadStatus === "error" ? "This full test could not be loaded" : t("loadingFullTest", { course: course.shortName })}</h3>
+            <p>{testLoadStatus === "error" ? testLoadError : t("validatingQuestions", { count: course.standard.questionsPerPaper })}</p>
+            {testLoadStatus === "error" ? (
+              <button type="button" className="button primary" onClick={() => onLoadTest(selectedTest)}>
+                <RefreshCw size={15} /> Retry test
+              </button>
+            ) : null}
+          </div>
         ) : test && question ? (
           <div className="exam-runner">
             <aside className="exam-sidebar">
@@ -1739,45 +2955,49 @@ function TestStudio({
                 className="runner-back"
                 onClick={() => setSelectedTest(null)}
               >
-                <ArrowLeft size={16} /> Back to library
+                <ArrowLeft size={16} /> {t("backToLibrary")}
               </button>
+              <LanguageSelector compact className="runner-language-selector" />
               <span className="runner-kicker">
-                {test.level.toUpperCase()} FULL TEST
+                {t(test.level.toLowerCase()).toUpperCase()} {t("fullTest").toUpperCase()}
               </span>
-              <h2>{test.title}</h2>
+              <h2>{course.shortName} {t(test.level.toLowerCase())} {t("fullTest")} {test.categoryNumber || test.number}</h2>
               <div className="coverage-proof">
                 <ShieldCheck size={17} />
                 <span>
-                  Syllabus coverage: MAT {coverage["Mental Ability"]}/6 · EVS{" "}
-                  {coverage["Environmental Studies"]}/20 · Arithmetic{" "}
-                  {coverage.Arithmetic}/9 · Language {coverage.Language}/5
+                  {t("syllabus")}: {course.blueprint.map((section) => `${subject(section.subject)} ${coverage[section.subject] || 0}`).join(" · ")}
                 </span>
               </div>
               <button
                 type="button"
                 className="runner-utility"
-                onClick={() => window.print()}
+                onClick={printCompletePaper}
+                disabled={printPreparing}
               >
-                <Printer size={16} /> Print complete paper
+                <Printer size={16} /> {printPreparing ? t("preparingPaper") : t("printComplete")}
               </button>
               <button
                 type="button"
                 className="runner-utility accent"
-                onClick={() => window.print()}
+                onClick={printCompletePaper}
+                disabled={printPreparing}
               >
-                <FileText size={16} /> Save complete paper as PDF
+                <FileText size={16} /> {printPreparing ? t("preparingPaper") : t("savePdf")}
               </button>
+              <p className="runner-print-help">
+                {t("printSettings")}
+              </p>
               <div className="runner-progress-meta">
                 <span>
-                  <b>{answeredCount}</b> answered
+                  <b>{answeredCount}</b> {t("answered")}
                 </span>
                 <time>{formatTime(remainingSeconds)}</time>
               </div>
               <div className="runner-progress">
-                <span style={{ width: `${(answeredCount / 80) * 100}%` }} />
+                <span style={{ width: `${(answeredCount / test.questionCount) * 100}%` }} />
               </div>
               <div className="runner-sections">
-                {JNVST_BLUEPRINT.map((section) => {
+                {course.blueprint.map((section) => {
                   const first = test.questions.findIndex(
                     (item) => item.subject === section.subject,
                   );
@@ -1790,8 +3010,8 @@ function TestStudio({
                       key={section.key}
                       onClick={() => goTo(first)}
                     >
-                      <span>{section.subject}</span>
-                      <b>20</b>
+                      <span>{subject(section.subject)}</span>
+                      <b>{section.questionCount}</b>
                     </button>
                   );
                 })}
@@ -1803,7 +3023,7 @@ function TestStudio({
                 {test.questions.map((item, index) => (
                   <button
                     type="button"
-                    aria-label={`Question ${index + 1}`}
+                    aria-label={`${t("question")} ${index + 1}`}
                     className={`${index === currentIndex ? "current" : ""} ${answers[item.questionId] ? "answered" : "unanswered"} ${bookmarked.has(item.questionId) ? "bookmarked" : ""}`}
                     key={item.questionId}
                     onClick={() => goTo(index)}
@@ -1814,34 +3034,34 @@ function TestStudio({
               </div>
               <div className="palette-legend">
                 <span>
-                  <i className="answered" /> Attempted
+                  <i className="answered" /> {t("attempted")}
                 </span>
                 <span>
-                  <i className="unanswered" /> Not attempted
+                  <i className="unanswered" /> {t("notAttempted")}
                 </span>
                 <span>
-                  <i className="current" /> Current
+                  <i className="current" /> {t("current")}
                 </span>
               </div>
             </aside>
             <main className="exam-stage">
               <header className="runner-heading">
                 <div>
-                  <span>{question.subject.toUpperCase()}</span>
-                  <h2>{question.topic}</h2>
+                  <span>{(question.subjectLabel || subject(question.subject)).toUpperCase()}</span>
+                  <h2>{question.topicLabel || text(question.topic)}</h2>
                 </div>
                 <button
                   type="button"
                   className="submit-test"
                   onClick={() => setSubmitted(true)}
                 >
-                  {submitted ? "Test submitted" : "Submit test"}
+                  {submitted ? t("submitTest") : t("submitTest")}
                 </button>
                 <button
                   type="button"
                   className="runner-close"
                   onClick={close}
-                  aria-label="Close test"
+                  aria-label={t("closeTest")}
                 >
                   <X size={19} />
                 </button>
@@ -1854,7 +3074,7 @@ function TestStudio({
                       {score} correct · {answeredCount} attempted
                     </strong>
                     <p>
-                      Your current score is {score * 1.25} / 100 marks. Select
+                      Your current score is {score} / {test.totalMarks} marks. Select
                       any palette number to review its answer.
                     </p>
                   </div>
@@ -1862,20 +3082,23 @@ function TestStudio({
               ) : null}
               <article className="runner-question-card">
                 <div className="runner-question-meta">
-                  <span>QUESTION {currentIndex + 1} / 80</span>
-                  <i>{test.level}</i>
+                  <span>{t("question").toUpperCase()} {currentIndex + 1} / {test.questionCount}</span>
+                  <i>{t(test.level.toLowerCase())}</i>
                 </div>
                 {question.syllabusSubtopics?.length ? (
                   <p className="runner-syllabus-tag">
-                    Syllabus skill · {question.syllabusSubtopics.join(", ")}
+                    {t("syllabusSkill")} · {question.syllabusSubtopics.map((item) => text(item)).join(", ")}
                   </p>
+                ) : null}
+                {question.localization?.retainedLanguageSubject ? (
+                  <p className="runner-language-note">{t("retainedLanguage")}</p>
                 ) : null}
                 {question.passageId ? (
                   <div className="runner-passage">
                     <span>
                       {question.subject === "Language"
-                        ? "READING PASSAGE"
-                        : "EVS STUDY NOTES"}
+                        ? t("readingPassage").toUpperCase()
+                        : t("evsStudyNotes").toUpperCase()}
                     </span>
                     <p>{question.passage}</p>
                   </div>
@@ -1912,7 +3135,7 @@ function TestStudio({
                 </div>
                 {revealAnswer ? (
                   <div className="runner-explanation">
-                    <strong>Answer {question.answer}</strong>
+                    <strong>{t("answer")} {question.answer}</strong>
                     <p>{question.explanation}</p>
                   </div>
                 ) : null}
@@ -1923,7 +3146,7 @@ function TestStudio({
                   disabled={currentIndex === 0}
                   onClick={() => goTo(currentIndex - 1)}
                 >
-                  <ArrowLeft size={19} /> Previous
+                  <ArrowLeft size={19} /> {t("previous")}
                 </button>
                 <button
                   type="button"
@@ -1932,8 +3155,8 @@ function TestStudio({
                 >
                   <Bookmark size={19} />{" "}
                   {bookmarked.has(question.questionId)
-                    ? "Bookmarked"
-                    : "Bookmark"}
+                    ? t("bookmarked")
+                    : t("bookmark")}
                 </button>
                 <span />
                 <button
@@ -1941,94 +3164,92 @@ function TestStudio({
                   disabled={!answers[question.questionId]}
                   onClick={toggleChecked}
                 >
-                  {revealAnswer && !submitted ? "Hide answer" : "Check answer"}
+                  {revealAnswer && !submitted ? t("hideAnswer") : t("checkAnswer")}
                 </button>
                 <button
                   type="button"
                   className="next"
-                  disabled={currentIndex === 79}
+                  disabled={currentIndex === test.questionCount - 1}
                   onClick={() => goTo(currentIndex + 1)}
                 >
-                  Next <ArrowRight size={19} />
+                  {t("next")} <ArrowRight size={19} />
                 </button>
               </footer>
             </main>
-            <div className="runner-print-bank" aria-hidden="true">
-              {test.questions.map((item) => (
-                <article key={`print-${item.questionId}`}>
-                  <h3>
-                    {item.questionNumber}. {item.text}
-                  </h3>
-                  {item.passageId ? <p>{item.passage}</p> : null}
-                  <ol type="A">
-                    {item.options.map((option) => (
-                      <li key={option.id}>{option.label}</li>
-                    ))}
-                  </ol>
-                </article>
-              ))}
-            </div>
+            <PrintPaper course={course} test={test} />
           </div>
         ) : (
           <>
             <div className="exam-blueprint-banner">
               <ShieldCheck size={18} />
               <div>
-                <strong>New validated Testing module</strong>
+                <strong>{t("fullTestModule")}</strong>
                 <p>
-                  Every paper contains newly authored questions: 20 Mental
-                  Ability + 20 EVS + 20 Arithmetic + 20 Language.
+                  {t("paperContains")} {course.blueprint.map((section) => `${section.questionCount} ${subject(section.subject)}`).join(" + ")}.
                 </p>
               </div>
             </div>
             <div className="catalog-toolbar">
               <div className="catalog-count">
-                <strong>{visibleTests.length}</strong> full tests shown
+                <strong>{visibleTests.length}</strong> {t("testsShown")}
               </div>
               <select
-                aria-label="Filter tests by difficulty"
+                aria-label={t("filterDifficulty")}
                 value={levelFilter}
                 onChange={(event) => setLevelFilter(event.target.value)}
               >
-                <option>All levels</option>
-                <option>Easy</option>
-                <option>Medium</option>
-                <option>Challenging</option>
+                <option value="All levels">{t("allLevels")}</option>
+                <option value="Easy">{t("easy")}</option>
+                <option value="Medium">{t("medium")}</option>
+                <option value="Challenging">{t("challenging")}</option>
               </select>
               <button
                 type="button"
                 className="button primary small"
                 onClick={() => window.print()}
               >
-                <Printer size={15} /> Print test list
+                <Printer size={15} /> {t("printTestList")}
               </button>
             </div>
-            <div className="test-grid">
-              {visibleTests.map((item) => (
-                <button
-                  type="button"
-                  className={`test-tile ${item.level.toLowerCase()}`}
-                  key={item.id}
-                  onClick={() => openTest(item.id)}
-                >
-                  <div>
-                    <span className="test-number">
-                      {item.level.toUpperCase()} TEST{" "}
-                      {String(item.categoryNumber || item.number).padStart(
-                        2,
-                        "0",
-                      )}
-                    </span>
-                    <h3>{item.level}</h3>
-                    <p>
-                      80 questions · 100 marks · {item.topics?.length || 0}{" "}
-                      topics
-                    </p>
-                  </div>
-                  <ArrowUpRight size={17} />
+            {visibleTests.length > 0 ? (
+              <div className="test-grid">
+                {visibleTests.map((item) => (
+                  <button
+                    type="button"
+                    className={`test-tile ${item.level.toLowerCase()}`}
+                    key={item.id}
+                    onClick={() => openTest(item.id)}
+                  >
+                    <div>
+                      <span className="test-number">
+                        {t(item.level.toLowerCase()).toUpperCase()} {t("test").toUpperCase()}{" "}
+                        {String(item.categoryNumber || item.number).padStart(
+                          2,
+                          "0",
+                        )}
+                      </span>
+                      <h3>{t(item.level.toLowerCase())}</h3>
+                      <p>
+                        {item.questionCount} {t("questions")} · {item.totalMarks} {t("marks")} · {item.topics?.length || 0}{" "}
+                        {t("topics")}
+                      </p>
+                    </div>
+                    <ArrowUpRight size={17} />
+                  </button>
+                ))}
+              </div>
+            ) : (
+              <div className="catalog-state error-state" role="status">
+                <AlertCircle size={28} />
+                <h3>No full tests are available for this filter</h3>
+                <p>
+                  Refresh the validated {course.shortName} catalog or choose a different difficulty.
+                </p>
+                <button type="button" className="button primary" onClick={onRetry}>
+                  <RefreshCw size={15} /> Refresh test catalog
                 </button>
-              ))}
-            </div>
+              </div>
+            )}
           </>
         )}
       </section>
@@ -2038,4 +3259,8 @@ function TestStudio({
 
 export default App;
 
-createRoot(document.getElementById("root")).render(<App />);
+createRoot(document.getElementById("root")).render(
+  <I18nProvider>
+    <App />
+  </I18nProvider>,
+);
