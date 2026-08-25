@@ -10,6 +10,8 @@ import loginHandler from './api/auth/login.js';
 import sessionHandler from './api/auth/session.js';
 import logoutHandler from './api/auth/logout.js';
 import studentsHandler from './api/students.js';
+import resourcesHandler from './api/resources.js';
+import healthHandler from './api/health.js';
 
 const port = Number(process.env.PORT || 5174);
 const rootDirectory = path.dirname(fileURLToPath(import.meta.url));
@@ -62,6 +64,11 @@ const server = http.createServer(async (request, response) => {
   const course = url.searchParams.get('course') || 'jnvst';
   if (authHandlers.has(url.pathname)) return runApiHandler(authHandlers.get(url.pathname), request, response, url);
   if (url.pathname === '/api/students') return runApiHandler(studentsHandler, request, response, url);
+  if (url.pathname === '/api/resources') return runApiHandler(resourcesHandler, request, response, url);
+  if (url.pathname === '/api/ai-tutor') {
+    url.searchParams.set('tutor', '1');
+    return runApiHandler(healthHandler, request, response, url);
+  }
   if (url.pathname === '/api/health') return json(response, 200, { service: 'vijetha-testing-api', database: deploymentMetadata.databaseName, moduleVersion: deploymentMetadata.moduleVersion, modules: deploymentMetadata.modules, status: deploymentMetadata.hasMongo ? 'configured' : 'preview' });
   if (url.pathname === '/api/full-test-catalog' || url.pathname === '/api/test-catalog') {
     try {

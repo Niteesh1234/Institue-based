@@ -28,9 +28,12 @@
     "validate:duplicates": "node scripts/validate-duplicate-defense.js",
     "validate:all-courses": "node scripts/validate-all-courses.js",
     "validate:print": "node scripts/validate-print-papers.js",
+    "validate:sets": "node scripts/validate-exam-sets.js",
     "validate:auth": "node scripts/validate-auth-security.js",
     "validate:students": "node scripts/validate-student-module.js",
-    "validate:localization": "node scripts/validate-localization.js"
+    "validate:resources": "node scripts/validate-resource-module.js",
+    "validate:localization": "node scripts/validate-localization.js",
+    "validate:tutor": "node scripts/validate-hologram-tutor.js"
   },
   "dependencies": {
     "@capacitor/android": "^8.5.0",

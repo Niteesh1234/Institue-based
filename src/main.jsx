@@ -1,6 +1,5 @@
 import { Component, useEffect, useMemo, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
-import { Capacitor } from "@capacitor/core";
 import { App as CapacitorApp } from "@capacitor/app";
 import { Browser } from "@capacitor/browser";
 import { SplashScreen } from "@capacitor/splash-screen";
@@ -39,6 +38,7 @@ import {
   Search,
   Send,
   Settings,
+  Shuffle,
   ShieldCheck,
   Trash2,
   UserPlus,
@@ -58,6 +58,15 @@ import {
 } from "../syllabus.js";
 import { EXAM_COURSES, getExamCourse } from "../exam-courses.js";
 import { I18nProvider, LanguageSelector, useI18n } from "./i18n.jsx";
+import {
+  API_BASE_URL,
+  IS_NATIVE_APP,
+  authRequest,
+  clearNativeSession,
+} from "./api-client.js";
+import { ResourcesPage, StudentResourcesPortal } from "./resources.jsx";
+import { createExamSet, EXAM_SET_CODES } from "../exam-set-engine.js";
+import { HologramTutorPage } from "./hologram-tutor.jsx";
 
 const BATCHES = [
   {
@@ -97,17 +106,6 @@ const DEMO_STUDENTS = [
   { id: "demo-rehan", name: "Rehan Malik", batch: "JNVST Weekend", progress: 64, status: "Needs review", lastActive: "Yesterday" },
 ];
 
-const NATIVE_PLATFORM = Capacitor.getPlatform();
-const IS_NATIVE_APP = Capacitor.isNativePlatform();
-const NATIVE_API_BASE_URL = "https://vijetha-jnvst-testing.vercel.app";
-const NATIVE_SESSION_KEY = "vijetha_native_session";
-const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL ||
-  (IS_NATIVE_APP
-    ? NATIVE_API_BASE_URL
-    : import.meta.env.DEV
-      ? "http://localhost:5174"
-      : "");
 const STATIC_BANK_URL = `${import.meta.env.BASE_URL}generated`;
 const EXPECTED_LEVELS = ["Easy", "Medium", "Challenging"];
 const QUESTION_DATA_TIMEOUT_MS = 7000;
@@ -153,39 +151,6 @@ async function fetchQuestionData(staticPath, apiPath, signal) {
     }
   }
   throw lastError || new Error("Question data could not be loaded.");
-}
-
-async function authRequest(path, options = {}) {
-  const nativeToken = IS_NATIVE_APP
-    ? window.localStorage.getItem(NATIVE_SESSION_KEY)
-    : "";
-  const response = await fetch(`${API_BASE_URL}${path}`, {
-    credentials: IS_NATIVE_APP ? "omit" : "include",
-    headers: {
-      "Content-Type": "application/json",
-      ...(IS_NATIVE_APP ? { "X-Vijetha-Platform": NATIVE_PLATFORM } : {}),
-      ...(nativeToken ? { Authorization: `Bearer ${nativeToken}` } : {}),
-      ...(options.headers || {}),
-    },
-    ...options,
-  });
-  const payload = await response.json().catch(() => ({}));
-  if (IS_NATIVE_APP && payload.sessionToken) {
-    window.localStorage.setItem(NATIVE_SESSION_KEY, payload.sessionToken);
-  }
-  if (!response.ok) {
-    if (IS_NATIVE_APP && response.status === 401) {
-      window.localStorage.removeItem(NATIVE_SESSION_KEY);
-    }
-    const error = new Error(payload.error || "Authentication could not be completed.");
-    error.code = payload.code;
-    throw error;
-  }
-  return payload;
-}
-
-function clearNativeSession() {
-  if (IS_NATIVE_APP) window.localStorage.removeItem(NATIVE_SESSION_KEY);
 }
 
 async function openExternalLink(event, url) {
@@ -271,9 +236,11 @@ function validateFullCatalog(tests, course) {
 
 const NAV_ITEMS = [
   ["Dashboard", LayoutDashboard],
+  ["AI Holo Tutor", GraduationCap],
   ["Students", Users],
   ["Classes", CalendarDays],
   ["Mock Tests", ClipboardCheck],
+  ["Resources", FileText],
   ["Progress", BarChart3],
   ["Parents", MessageSquare],
   ["Syllabus", BookOpen],
@@ -281,9 +248,11 @@ const NAV_ITEMS = [
 
 const NAV_MESSAGE_KEYS = {
   Dashboard: "dashboard",
+  "AI Holo Tutor": "aiHoloTutor",
   Students: "students",
   Classes: "classes",
   "Mock Tests": "mockTests",
+  Resources: "resources",
   Progress: "progress",
   Parents: "parents",
   Syllabus: "syllabus",
@@ -370,6 +339,9 @@ function App() {
   const searchRef = useRef(null);
   const course = getExamCourse(courseKey);
   const currentUser = authUser || { name: "Vijetha User", email: "", role: "teacher" };
+  const studentAccessCode =
+    new URLSearchParams(window.location.hash.slice(1)).get("studentAccess") ||
+    new URLSearchParams(window.location.search).get("studentAccess");
 
   useEffect(() => {
     if (!IS_NATIVE_APP) return undefined;
@@ -597,6 +569,8 @@ function App() {
     setStage("landing");
   };
 
+  if (studentAccessCode)
+    return <StudentResourcesPortal accessCode={studentAccessCode} />;
   if (stage === "landing")
     return <LandingPage onLogin={() => setStage("login")} />;
   if (stage === "login")
@@ -819,6 +793,9 @@ function App() {
               onOpenTests={openStudio}
             />
           )}
+          {active === "AI Holo Tutor" && (
+            <HologramTutorPage course={course} user={currentUser} />
+          )}
           {active === "Students" && (
             <StudentsPage
               students={studentRows}
@@ -842,6 +819,14 @@ function App() {
               dataSource={dataSource}
               onRetry={retryCatalog}
               onOpen={openStudio}
+            />
+          )}
+          {active === "Resources" && (
+            <ResourcesPage
+              course={course}
+              students={studentRows}
+              demo={Boolean(currentUser.demo)}
+              onOpenStudents={() => navigateWorkspace("Students")}
             />
           )}
           {active === "Progress" && <ProgressPage students={studentRows} />}
@@ -939,8 +924,13 @@ function LandingPage({ onLogin }) {
           <LanguageSelector compact className="public-language-selector" />
           <a href="#standard">{copy.standards}</a>
           <a href="#features">{copy.modules}</a>
-          <button type="button" className="button primary" onClick={onLogin}>
-            {t("instituteLogin")} <ArrowRight size={16} />
+          <button
+            type="button"
+            className="button primary"
+            onClick={onLogin}
+            aria-label={t("instituteLogin")}
+          >
+            <span>{t("instituteLogin")}</span> <ArrowRight size={16} />
           </button>
         </div>
       </nav>
@@ -2539,7 +2529,92 @@ function QuestionStimulus({ stimulus }) {
   );
 }
 
-function PrintPaper({ course, test }) {
+function ExamSetDialog({ mode, selectedSet, preparing, onSelect, onClose, onConfirm }) {
+  const { t } = useI18n();
+  if (!mode) return null;
+  const isPdf = mode === "pdf";
+
+  return (
+    <div
+      className="exam-set-dialog-backdrop"
+      role="presentation"
+      onMouseDown={(event) => event.target === event.currentTarget && onClose()}
+    >
+      <section
+        className="exam-set-dialog"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="exam-set-dialog-title"
+      >
+        <header>
+          <div className="exam-set-dialog-icon">
+            {isPdf ? <FileText size={22} /> : <Printer size={22} />}
+          </div>
+          <div>
+            <span>{t("secureExamSets")}</span>
+            <h2 id="exam-set-dialog-title">{t("chooseExamSet")}</h2>
+            <p>{isPdf ? t("saveSetHelp") : t("printSetHelp")}</p>
+          </div>
+          <button type="button" onClick={onClose} aria-label={t("closeExamSetDialog")}>
+            <X size={19} />
+          </button>
+        </header>
+
+        <div className="exam-set-grid" aria-label={t("chooseExamSet")}>
+          {EXAM_SET_CODES.map((setCode) => (
+            <button
+              type="button"
+              className={selectedSet === setCode ? "selected" : ""}
+              aria-pressed={selectedSet === setCode}
+              onClick={() => onSelect(setCode)}
+              key={setCode}
+            >
+              <span>{t("set")}</span>
+              <strong>{setCode}</strong>
+              <i>{t("uniqueOrder")}</i>
+              {selectedSet === setCode ? <Check size={17} /> : null}
+            </button>
+          ))}
+        </div>
+
+        <div className="exam-set-assurance">
+          <ShieldCheck size={21} />
+          <div>
+            <strong>{t("sameValidatedPaper")}</strong>
+            <p>{t("examSetAssurance")}</p>
+          </div>
+        </div>
+
+        <div className="exam-set-features">
+          <span><Shuffle size={15} /> {t("questionsShuffled")}</span>
+          <span><Shuffle size={15} /> {t("optionsShuffled")}</span>
+          <span><ShieldCheck size={15} /> {t("answersRemapped")}</span>
+        </div>
+
+        <footer>
+          <button type="button" className="exam-set-cancel" onClick={onClose}>
+            {t("cancel")}
+          </button>
+          <button
+            type="button"
+            className="exam-set-confirm"
+            disabled={preparing}
+            onClick={() => onConfirm(selectedSet, mode)}
+          >
+            {preparing ? <RefreshCw className="spin" size={17} /> : isPdf ? <FileText size={17} /> : <Printer size={17} />}
+            {preparing
+              ? t("preparingPaper")
+              : isPdf
+                ? t("saveSetPdf", { set: selectedSet })
+                : t("printSet", { set: selectedSet })}
+          </button>
+        </footer>
+      </section>
+    </div>
+  );
+}
+
+function PrintPaper({ course, test, setCode }) {
   const { locale, t, text, subject } = useI18n();
   const negativeMarking = Number(course.standard.negativeMarking || 0);
   const printPattern = course.printPattern || {};
@@ -2568,7 +2643,7 @@ function PrintPaper({ course, test }) {
   );
 
   return (
-    <div className="runner-print-bank" aria-hidden="true">
+    <div className="runner-print-bank" aria-hidden="true" data-exam-set={setCode}>
       <header className="print-paper-header">
         <div>
           <span>VIJETHA INSTITUTE · {t("fullTest").toUpperCase()}</span>
@@ -2577,6 +2652,7 @@ function PrintPaper({ course, test }) {
         </div>
         <div className="print-paper-code">
           <strong>{test.id}</strong>
+          <b aria-label={`${t("bookletCode")} ${setCode}`}>{setCode}</b>
           <span>{t(test.level.toLowerCase())}</span>
         </div>
       </header>
@@ -2584,7 +2660,7 @@ function PrintPaper({ course, test }) {
       <section className="print-candidate-fields">
         <span>{t("candidateName")}: ______________________________</span>
         <span>{t("rollNumber")}: __________________</span>
-        <span>{t("bookletCode")}: A / B / C / D</span>
+        <span>{t("bookletCode")}: <strong>{setCode}</strong></span>
         <span>{t("candidateSignature")}: ______________________</span>
         <span>{t("invigilatorSignature")}: __________________</span>
         <span>{t("date")}: ________________</span>
@@ -2644,7 +2720,7 @@ function PrintPaper({ course, test }) {
               <h2>{subject(section.subject)}</h2>
               <p>
                 {t("question")} {questions[0]?.questionNumber}–{questions.at(-1)?.questionNumber}
-                {" · "}{section.questionCount} {t("questions")} · {section.marks} {t("marks")}
+                {" · "}{section.questionCount} {t("questions")} · {section.marks} {t("marks")} · {setCode}
               </p>
             </header>
             {questions.map((item, index) => {
@@ -2696,7 +2772,7 @@ function PrintPaper({ course, test }) {
         <section className="print-answer-sheet" key={`response-page-${pageIndex + 1}`}>
           <header>
             <span>{t("responseSheet").toUpperCase()} · OMR</span>
-            <h2>{course.shortName} · {test.id}</h2>
+            <h2>{course.shortName} · {test.id} · {setCode}</h2>
             <p>
               {t("responseSheetHelp")}
               {responsePages.length > 1
@@ -2741,6 +2817,9 @@ function TestStudio({
   );
   const [submitted, setSubmitted] = useState(false);
   const [printPreparing, setPrintPreparing] = useState(false);
+  const [printDialogMode, setPrintDialogMode] = useState(null);
+  const [selectedPrintSet, setSelectedPrintSet] = useState("A");
+  const [activePrintSet, setActivePrintSet] = useState("A");
   const testMap = useMemo(
     () => new Map(testCatalog.map((item) => [item.id, item])),
     [testCatalog],
@@ -2756,6 +2835,10 @@ function TestStudio({
   const test = useMemo(
     () => (sourceTest ? localizeTest(sourceTest) : sourceTest),
     [sourceTest, localizeTest, locale],
+  );
+  const printableTest = useMemo(
+    () => (test ? createExamSet(test, activePrintSet, course.blueprint) : test),
+    [activePrintSet, course.blueprint, test],
   );
   const question = test?.questions[currentIndex];
   const answeredCount = Object.keys(answers).length;
@@ -2790,6 +2873,9 @@ function TestStudio({
     setBookmarked(new Set());
     setRemainingSeconds(course.standard.durationMinutes * 60);
     setSubmitted(false);
+    setPrintDialogMode(null);
+    setSelectedPrintSet("A");
+    setActivePrintSet("A");
   }, [course, selectedTest]);
 
   useEffect(() => {
@@ -2847,11 +2933,13 @@ function TestStudio({
         : next.add(question.questionId);
       return next;
     });
-  const printCompletePaper = async () => {
+  const printCompletePaper = async (setCode, mode) => {
     if (printPreparing) return;
+    setActivePrintSet(setCode);
+    setPrintDialogMode(null);
     setPrintPreparing(true);
     const originalTitle = document.title;
-    const printableTitle = `${course.shortName}-${test.id}-${locale.toUpperCase()}-Full-Practice-Paper`;
+    const printableTitle = `${course.shortName}-${test.id}-SET-${setCode}-${locale.toUpperCase()}-${mode === "pdf" ? "PDF" : "Print"}`;
     let restored = false;
     const restoreTitle = () => {
       if (restored) return;
@@ -2971,7 +3059,7 @@ function TestStudio({
               <button
                 type="button"
                 className="runner-utility"
-                onClick={printCompletePaper}
+                onClick={() => setPrintDialogMode("print")}
                 disabled={printPreparing}
               >
                 <Printer size={16} /> {printPreparing ? t("preparingPaper") : t("printComplete")}
@@ -2979,7 +3067,7 @@ function TestStudio({
               <button
                 type="button"
                 className="runner-utility accent"
-                onClick={printCompletePaper}
+                onClick={() => setPrintDialogMode("pdf")}
                 disabled={printPreparing}
               >
                 <FileText size={16} /> {printPreparing ? t("preparingPaper") : t("savePdf")}
@@ -3176,7 +3264,15 @@ function TestStudio({
                 </button>
               </footer>
             </main>
-            <PrintPaper course={course} test={test} />
+            <ExamSetDialog
+              mode={printDialogMode}
+              selectedSet={selectedPrintSet}
+              preparing={printPreparing}
+              onSelect={setSelectedPrintSet}
+              onClose={() => setPrintDialogMode(null)}
+              onConfirm={printCompletePaper}
+            />
+            <PrintPaper course={course} test={printableTest} setCode={activePrintSet} />
           </div>
         ) : (
           <>

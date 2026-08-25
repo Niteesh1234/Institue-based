@@ -1,0 +1,258 @@
+.hologram-page {
+  --holo-cyan: #68f3e4;
+  --holo-teal: #1ec9b7;
+  --holo-deep: #102b32;
+  --holo-ink: #162a31;
+  padding-bottom: 35px;
+}
+
+.hologram-heading {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 30px;
+  margin: 8px 0 25px;
+}
+
+.hologram-heading > div:first-child > span {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #248f82;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: .16em;
+}
+
+.hologram-heading h1 {
+  margin: 11px 0 7px;
+  font: 800 clamp(34px, 4vw, 55px)/1 Syne, sans-serif;
+  letter-spacing: -.055em;
+}
+
+.hologram-heading p {
+  max-width: 710px;
+  color: #64736f;
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.hologram-mode {
+  min-width: 185px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  border: 1px solid #c9d9d3;
+  border-radius: 9px;
+  background: rgba(255, 255, 255, .7);
+  color: #59716b;
+}
+
+.hologram-mode.online { border-color: #7bd5c5; color: #157f73; background: #e7f7f2; }
+.hologram-mode span { display: flex; flex-direction: column; gap: 2px; }
+.hologram-mode b { font-size: 10px; }
+.hologram-mode small { color: #82908c; font-size: 8px; }
+
+.hologram-layout {
+  min-height: 650px;
+  display: grid;
+  grid-template-columns: minmax(330px, .82fr) minmax(460px, 1.18fr);
+  overflow: hidden;
+  border: 1px solid #ccd7d2;
+  border-radius: 18px;
+  background: #fffdfa;
+  box-shadow: 0 24px 60px rgba(21, 52, 57, .09);
+}
+
+.hologram-visual-panel {
+  position: relative;
+  min-height: 650px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  overflow: hidden;
+  padding: 38px;
+  background:
+    radial-gradient(circle at 50% 43%, rgba(53, 221, 204, .2), transparent 31%),
+    linear-gradient(155deg, #18383f, #0c242b 68%, #102f35);
+  color: #e7fffb;
+}
+
+.hologram-visual-panel:before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  opacity: .23;
+  background-image: linear-gradient(rgba(104, 243, 228, .08) 1px, transparent 1px);
+  background-size: 100% 5px;
+  pointer-events: none;
+}
+
+.holo-stage {
+  position: absolute;
+  inset: 22px 20px 182px;
+  min-height: 400px;
+  perspective: 700px;
+}
+
+.holo-grid {
+  position: absolute;
+  inset: 45% -25% -18%;
+  transform: rotateX(66deg);
+  background-image:
+    linear-gradient(rgba(67, 222, 207, .19) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(67, 222, 207, .19) 1px, transparent 1px);
+  background-size: 28px 28px;
+  mask-image: linear-gradient(to bottom, #000, transparent 82%);
+}
+
+.holo-beam {
+  position: absolute;
+  left: 50%;
+  top: 8%;
+  width: 300px;
+  height: 420px;
+  transform: translateX(-50%);
+  opacity: .6;
+  clip-path: polygon(35% 0, 65% 0, 100% 100%, 0 100%);
+  background: linear-gradient(to bottom, rgba(90, 255, 235, .02), rgba(68, 230, 213, .16));
+  filter: blur(3px);
+}
+
+.holo-rings { position: absolute; left: 50%; bottom: 8%; width: 260px; height: 100px; transform: translateX(-50%); }
+.holo-rings i {
+  position: absolute;
+  inset: 0;
+  border: 2px solid rgba(101, 248, 230, .7);
+  border-radius: 50%;
+  box-shadow: 0 0 22px rgba(75, 235, 216, .28), inset 0 0 20px rgba(75, 235, 216, .18);
+  animation: holo-ring 3.4s ease-in-out infinite;
+}
+.holo-rings i:nth-child(2) { inset: 17px 35px; animation-delay: -.9s; }
+.holo-rings i:nth-child(3) { inset: 34px 75px; animation-delay: -1.8s; }
+
+.holo-avatar {
+  position: absolute;
+  left: 50%;
+  bottom: 14%;
+  width: 220px;
+  height: 330px;
+  transform: translateX(-50%);
+  filter: drop-shadow(0 0 16px rgba(81, 242, 224, .35));
+  animation: holo-float 4.2s ease-in-out infinite;
+}
+
+.holo-head {
+  position: absolute;
+  left: 50%;
+  top: 22px;
+  width: 104px;
+  height: 116px;
+  transform: translateX(-50%);
+  border: 2px solid rgba(124, 255, 238, .88);
+  border-radius: 48% 48% 44% 44%;
+  background: linear-gradient(155deg, rgba(144, 255, 242, .28), rgba(18, 142, 135, .08));
+  box-shadow: inset 0 0 24px rgba(105, 248, 231, .24), 0 0 22px rgba(61, 221, 205, .2);
+}
+
+.holo-head:before,
+.holo-head:after { content: ""; position: absolute; top: 39px; width: 9px; height: 30px; border: 2px solid rgba(124, 255, 238, .75); }
+.holo-head:before { left: -10px; border-radius: 7px 0 0 7px; border-right: 0; }
+.holo-head:after { right: -10px; border-radius: 0 7px 7px 0; border-left: 0; }
+.holo-eye { position: absolute; top: 50px; width: 13px; height: 5px; border-radius: 10px; background: #b9fff5; box-shadow: 0 0 10px #66f6e5; animation: holo-blink 4.8s infinite; }
+.holo-eye.left { left: 25px; }
+.holo-eye.right { right: 25px; }
+.holo-smile { position: absolute; left: 50%; bottom: 24px; width: 26px; height: 10px; transform: translateX(-50%); border-bottom: 2px solid #aafff3; border-radius: 0 0 50% 50%; }
+.holo-neck { position: absolute; left: 50%; top: 135px; width: 31px; height: 27px; transform: translateX(-50%); border: 2px solid rgba(124,255,238,.76); border-top: 0; }
+.holo-body { position: absolute; left: 50%; bottom: 25px; width: 190px; height: 170px; transform: translateX(-50%); clip-path: polygon(28% 0, 72% 0, 100% 28%, 88% 100%, 12% 100%, 0 28%); border: 2px solid rgba(124,255,238,.85); background: linear-gradient(145deg, rgba(111, 248, 232, .24), rgba(15, 132, 128, .04)); box-shadow: inset 0 0 36px rgba(76,236,218,.18); }
+.holo-body:before { content: ""; position: absolute; inset: 29px 37px; border: 1px solid rgba(128,255,239,.5); clip-path: polygon(50% 0,100% 28%,82% 100%,18% 100%,0 28%); }
+.holo-core { position: absolute; left: 50%; top: 67px; width: 52px; height: 52px; display: grid; place-items: center; transform: translate(-50%, -50%); border: 1px solid #a3fff3; border-radius: 50%; background: rgba(82,235,218,.14); color: #c8fff8; box-shadow: 0 0 26px rgba(77,243,223,.6); animation: holo-core 2.2s ease-in-out infinite; }
+.holo-scanlines { position: absolute; inset: 5% 12% 14%; overflow: hidden; }
+.holo-scanlines:after { content: ""; position: absolute; left: 0; right: 0; height: 3px; background: #aefff5; box-shadow: 0 0 17px #5ee8d8; animation: holo-scan 3.8s linear infinite; }
+.holo-state-label { position: absolute; top: 20px; right: 9px; display: flex; align-items: center; gap: 7px; color: rgba(199,255,248,.8); font-size: 8px; font-weight: 900; letter-spacing: .18em; }
+.holo-state-label span { width: 7px; height: 7px; border-radius: 50%; background: #65f1df; box-shadow: 0 0 9px #65f1df; }
+.holo-stage.listening .holo-state-label span { background: #f5b244; box-shadow: 0 0 9px #f5b244; animation: holo-core .7s infinite; }
+.holo-stage.thinking .holo-avatar { animation-duration: 1.7s; }
+
+.hologram-identity { position: relative; z-index: 2; padding-top: 22px; border-top: 1px solid rgba(154, 240, 229, .24); }
+.hologram-identity > span { color: #69ddcf; font-size: 8px; font-weight: 900; letter-spacing: .18em; }
+.hologram-identity h2 { margin: 5px 0 3px; font: 800 28px Syne, sans-serif; letter-spacing: -.045em; }
+.hologram-identity p { color: #a5c6c2; font-size: 10px; }
+.hologram-topic-cloud { position: relative; z-index: 2; display: flex; flex-wrap: wrap; gap: 5px; margin-top: 16px; }
+.hologram-topic-cloud span { padding: 5px 8px; border: 1px solid rgba(108, 220, 207, .23); border-radius: 20px; background: rgba(39, 124, 118, .16); color: #acd6d1; font-size: 8px; }
+
+.hologram-chat-panel { min-width: 0; display: grid; grid-template-rows:auto minmax(300px,1fr) auto auto auto auto; background: #fffdfa; }
+.hologram-chat-topbar { min-height: 73px; display: flex; align-items: center; justify-content: space-between; padding: 0 24px; border-bottom: 1px solid #e4e8e4; }
+.hologram-chat-topbar > div { display: flex; align-items: center; gap: 10px; color: #268e82; }
+.hologram-chat-topbar span { display: flex; flex-direction: column; gap: 2px; }
+.hologram-chat-topbar b { color: var(--holo-ink); font-size: 11px; }
+.hologram-chat-topbar small { color: #5d6d69; font-size: 8px; }
+.hologram-chat-topbar button { width: 36px; height: 36px; display: grid; place-items: center; border: 1px solid #d9dfdc; border-radius: 50%; background: #fff; color: #768480; }
+.hologram-chat-topbar button.active { border-color: #a5d8ce; background: #e9f6f2; color: #258f82; }
+
+.hologram-transcript { min-height: 0; max-height: 430px; overflow: auto; display: flex; flex-direction: column; gap: 17px; padding: 25px; scrollbar-width: thin; scrollbar-color: #b9d1ca transparent; }
+.hologram-transcript article { display: flex; align-items: flex-start; gap: 10px; max-width: 88%; }
+.hologram-transcript article.user { align-self: flex-end; flex-direction: row-reverse; }
+.hologram-transcript article > span { width: 28px; height: 28px; flex: 0 0 28px; display: grid; place-items: center; border-radius: 8px; background: #dff2ec; color: #247c71; font-size: 10px; font-weight: 900; }
+.hologram-transcript article.user > span { background: #f7e7dd; color: #a34f40; }
+.hologram-transcript article > div { padding: 11px 13px; border: 1px solid #e0e6e2; border-radius: 3px 12px 12px 12px; background: #f4f8f5; }
+.hologram-transcript article.user > div { border-color: #eedfd7; border-radius: 12px 3px 12px 12px; background: #fff4ee; }
+.hologram-transcript article b { display: block; margin-bottom: 5px; color: #1c7067; font-size: 8px; letter-spacing: .08em; text-transform: uppercase; }
+.hologram-transcript article.user b { color: #a15445; text-align: right; }
+.hologram-transcript article p { color: #344945; font-size: 11px; line-height: 1.55; white-space: pre-wrap; }
+.thinking-message p { display: flex; gap: 4px; min-width: 42px; padding: 5px 0; }
+.thinking-message i { width: 6px; height: 6px; border-radius: 50%; background: #36a798; animation: holo-dot 1s infinite alternate; }
+.thinking-message i:nth-child(2) { animation-delay: .2s; }.thinking-message i:nth-child(3) { animation-delay: .4s; }
+
+.hologram-suggestions { display: flex; flex-wrap: wrap; gap: 7px; padding: 0 25px 15px; }
+.hologram-suggestions button { padding: 8px 10px; border: 1px solid #cbded7; border-radius: 20px; background: #f0f8f4; color: #3d6c63; font-size: 9px; font-weight: 750; }
+.hologram-suggestions button:hover { border-color: #61ae9f; color: #187a6e; }
+.hologram-notice { margin: 0 25px 10px; padding: 8px 10px; border-radius: 6px; background: #fff2df; color: #8a5b18; font-size: 9px; }
+.hologram-composer { display: grid; grid-template-columns:auto 1fr auto; gap: 8px; margin: 0 25px; padding: 7px; border: 1px solid #cad7d2; border-radius: 12px; background: #fff; box-shadow: 0 8px 25px rgba(27,55,55,.06); }
+.hologram-composer input { min-width: 0; height: 42px; border: 0; outline: 0; background: transparent; color: #1f3336; font-size: 11px; }
+.hologram-composer button { width: 42px; height: 42px; display: grid; place-items: center; border: 0; border-radius: 9px; background: #e8f3ef; color: #247e73; }
+.hologram-composer button[type="submit"] { background: #173138; color: #fff; }
+.hologram-composer button:disabled { opacity: .35; cursor: not-allowed; }
+.hologram-composer button.listening { background: #fff0dd; color: #c36f1e; animation: holo-mic 1.1s infinite; }
+.hologram-chat-panel footer { display: flex; justify-content: space-between; gap: 15px; padding: 13px 25px 17px; color: #5d6a67; font-size: 8px; line-height: 1.35; }
+.hologram-chat-panel footer span:first-child { display: flex; align-items: center; gap: 5px; color: #517a72; }
+
+@keyframes holo-float { 50% { transform: translate(-50%, -9px); } }
+@keyframes holo-ring { 50% { transform: scale(1.08); opacity: .45; } }
+@keyframes holo-core { 50% { transform: translate(-50%, -50%) scale(1.12); opacity: .7; } }
+@keyframes holo-scan { from { top: 0; opacity: 0; } 10%,90% { opacity: .8; } to { top: 100%; opacity: 0; } }
+@keyframes holo-blink { 0%,46%,50%,100% { transform: scaleY(1); } 48% { transform: scaleY(.12); } }
+@keyframes holo-dot { to { transform: translateY(-4px); opacity: .45; } }
+@keyframes holo-mic { 50% { box-shadow: 0 0 0 7px rgba(230,159,65,.13); } }
+
+@media (max-width: 1000px) {
+  .hologram-layout { grid-template-columns: minmax(270px, .7fr) minmax(400px, 1.3fr); }
+  .hologram-visual-panel { padding: 27px; }
+  .holo-stage { transform: scale(.9); transform-origin: center bottom; }
+}
+
+@media (max-width: 760px) {
+  .hologram-heading { display: block; }
+  .hologram-mode { width: fit-content; margin-top: 17px; }
+  .hologram-layout { display: block; min-height: 0; }
+  .hologram-visual-panel { min-height: 390px; padding: 24px; }
+  .holo-stage { inset: 8px 10px 95px; min-height: 280px; transform: scale(.72); transform-origin: center bottom; }
+  .hologram-identity { padding-top: 13px; }
+  .hologram-identity h2 { font-size: 22px; }
+  .hologram-topic-cloud { display: none; }
+  .hologram-chat-panel { min-height: 590px; }
+  .hologram-transcript { max-height: 390px; padding: 18px; }
+  .hologram-transcript article { max-width: 95%; }
+  .hologram-suggestions { padding: 0 18px 13px; }
+  .hologram-composer { margin: 0 14px; }
+  .hologram-chat-panel footer { flex-direction: column; padding: 12px 15px 16px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .holo-rings i, .holo-avatar, .holo-core, .holo-scanlines:after, .holo-eye, .thinking-message i, .hologram-composer button.listening { animation: none !important; }
+}
+
+@media print {
+  .hologram-page { display: none !important; }
+}

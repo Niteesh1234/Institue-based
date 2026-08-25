@@ -177,7 +177,15 @@ export function assertSameOrigin(request) {
   const expectedOrigin = process.env.AUTH_ALLOWED_ORIGIN;
   const host = String(request.headers['x-forwarded-host'] || request.headers.host || '');
   let originHost = '';
-  try { originHost = new URL(origin).host; } catch { throw new AuthError(403, 'INVALID_ORIGIN', 'The request origin is not allowed.'); }
+  let originHostname = '';
+  try {
+    const parsedOrigin = new URL(origin);
+    originHost = parsedOrigin.host;
+    originHostname = parsedOrigin.hostname;
+  } catch { throw new AuthError(403, 'INVALID_ORIGIN', 'The request origin is not allowed.'); }
+  const requestHostname = host.split(':')[0];
+  const loopbackHosts = new Set(['localhost', '127.0.0.1', '::1', '[::1]']);
+  if (process.env.NODE_ENV !== 'production' && loopbackHosts.has(originHostname) && loopbackHosts.has(requestHostname)) return;
   if (originHost !== host && origin !== expectedOrigin) throw new AuthError(403, 'INVALID_ORIGIN', 'The request origin is not allowed.');
 }
 

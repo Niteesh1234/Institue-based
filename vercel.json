@@ -2,6 +2,16 @@
   "framework": "vite",
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
+  "rewrites": [
+    {
+      "source": "/api/validation-report",
+      "destination": "/api/health?report=1"
+    },
+    {
+      "source": "/api/ai-tutor",
+      "destination": "/api/health?tutor=1"
+    }
+  ],
   "headers": [
     {
       "source": "/generated/(.*)",
