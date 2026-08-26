@@ -32,6 +32,7 @@
     "validate:auth": "node scripts/validate-auth-security.js",
     "validate:students": "node scripts/validate-student-module.js",
     "validate:resources": "node scripts/validate-resource-module.js",
+    "validate:batch-exams": "node scripts/validate-batch-exam-module.js",
     "validate:localization": "node scripts/validate-localization.js",
     "validate:tutor": "node scripts/validate-hologram-tutor.js"
   },
@@ -44,6 +45,7 @@
     "@capacitor/splash-screen": "^8.0.2",
     "@capacitor/status-bar": "^8.0.3",
     "@vitejs/plugin-react": "latest",
+    "ai": "^7.0.79",
     "lucide-react": "latest",
     "mongodb": "latest",
     "react": "latest",

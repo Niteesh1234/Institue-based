@@ -71,6 +71,49 @@ npm run validate:auth
 npm run validate:students
 ```
 
+## Principal-controlled institute delivery
+
+The portal includes a **Principal Control** module with a fixed 12-batch ceiling,
+teacher access approval/suspension, admin-owned print/download permissions,
+batch-wise 60-question institute exams (20 Easy + 20 Medium + 20 Challenging),
+validated JSON/CSV teacher question uploads, secure PDF test-paper uploads with
+student assignment through MongoDB GridFS, a manual prepaid-credit ledger, and
+an independent Batch Exams module that composes and assigns validated 60-question
+papers with exactly 20 Easy, 20 Medium, and 20 Challenging questions while
+preventing question reuse across earlier batch papers, plus
+an audit register. Official JNVST, AISSEE, and RMS full-test blueprints remain
+unchanged; the 20/20/20 format is a separate institute exam workflow.
+
+Students can change a selected option before final submission, but the runner no
+longer reveals correctness through a “Check answer” action. Answers and
+explanations are available only after final submission.
+
+Bulk roster and question templates are available from the deployed site:
+
+- `/student-import-template.csv`
+- `/question-upload-template.csv`
+
+The prepaid ledger records principal-authorized credits without pretending to
+process money. Connect and configure the institute's selected payment provider
+before enabling real online collection.
+
+## Vijetha Holo Tutor
+
+The browser tutor accepts typed or spoken questions, keeps recent conversation
+context, answers in English, Hindi, or Telugu, and speaks its replies using the
+device voice. Final speech-recognition results are submitted automatically, so
+students can continue a hands-free question-and-answer flow.
+
+On Vercel, the AI SDK uses the deployment's automatically managed
+`VERCEL_OIDC_TOKEN` with AI Gateway. For local development outside Vercel, set
+`AI_GATEWAY_API_KEY`. `OPENAI_API_KEY` remains a supported direct-provider
+fallback. If neither credential is available, the tutor safely falls back to
+verified syllabus guidance and simple arithmetic instead of failing.
+
+```bash
+npm run validate:tutor
+```
+
 ## Run locally
 
 ```bash

@@ -11,6 +11,7 @@ import sessionHandler from './api/auth/session.js';
 import logoutHandler from './api/auth/logout.js';
 import studentsHandler from './api/students.js';
 import resourcesHandler from './api/resources.js';
+import batchExamsHandler from './api/batch-exams.js';
 import healthHandler from './api/health.js';
 
 const port = Number(process.env.PORT || 5174);
@@ -65,6 +66,7 @@ const server = http.createServer(async (request, response) => {
   if (authHandlers.has(url.pathname)) return runApiHandler(authHandlers.get(url.pathname), request, response, url);
   if (url.pathname === '/api/students') return runApiHandler(studentsHandler, request, response, url);
   if (url.pathname === '/api/resources') return runApiHandler(resourcesHandler, request, response, url);
+  if (url.pathname === '/api/batch-exams') return runApiHandler(batchExamsHandler, request, response, url);
   if (url.pathname === '/api/ai-tutor') {
     url.searchParams.set('tutor', '1');
     return runApiHandler(healthHandler, request, response, url);

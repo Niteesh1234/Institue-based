@@ -58,7 +58,7 @@ export function normalizeResourceInput(input = {}) {
   };
 }
 
-function decodeFile(input = {}) {
+export function decodeResourceFile(input = {}) {
   const filename = safeFilename(input.fileName);
   const mimeType = String(input.mimeType || '').toLowerCase();
   if (!allowedMimeTypes.has(mimeType)) throw new AuthError(400, 'UNSUPPORTED_FILE_TYPE', 'Upload a PDF, image, text, Word, or PowerPoint file.');
@@ -67,6 +67,12 @@ function decodeFile(input = {}) {
   const buffer = Buffer.from(encoded, 'base64');
   if (!buffer.length) throw new AuthError(400, 'EMPTY_FILE', 'The uploaded file is empty.');
   if (buffer.length > maxFileBytes) throw new AuthError(413, 'FILE_TOO_LARGE', 'Files must be 3 MB or smaller.');
+  if (mimeType === 'application/pdf') {
+    if (!filename.toLowerCase().endsWith('.pdf')) throw new AuthError(400, 'INVALID_PDF', 'PDF files must use the .pdf extension.');
+    if (buffer.length < 5 || buffer.subarray(0, 5).toString('ascii') !== '%PDF-') {
+      throw new AuthError(400, 'INVALID_PDF', 'The selected file is not a valid PDF document.');
+    }
+  }
   return { filename, mimeType, buffer };
 }
 
@@ -130,7 +136,7 @@ export async function listResources(request, query = {}) {
 export async function createResource(request, input) {
   const { user, ownerId } = await staffContext(request);
   const values = normalizeResourceInput(input);
-  const file = decodeFile(input.file || {});
+  const file = decodeResourceFile(input.file || {});
   const { resources, students, files } = await databaseResources();
   const assigned = await assignedStudents(students, ownerId, values.course, values.studentIds);
   const now = new Date();

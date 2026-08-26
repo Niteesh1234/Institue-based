@@ -22,6 +22,7 @@ const COPY = {
     online: "AI connected",
     guided: "Guided syllabus mode",
     listening: "Listening…",
+    speaking: "Speaking…",
     thinking: "Preparing an explanation…",
     placeholder: "Ask about a topic, question, test, or study plan…",
     send: "Send message",
@@ -45,6 +46,7 @@ const COPY = {
     online: "AI जुड़ा है",
     guided: "निर्देशित पाठ्यक्रम मोड",
     listening: "सुन रहा है…",
+    speaking: "उत्तर बोल रहा है…",
     thinking: "व्याख्या तैयार की जा रही है…",
     placeholder: "किसी विषय, प्रश्न, टेस्ट या अध्ययन योजना के बारे में पूछें…",
     send: "संदेश भेजें",
@@ -68,6 +70,7 @@ const COPY = {
     online: "AI అనుసంధానమైంది",
     guided: "మార్గదర్శక సిలబస్ మోడ్",
     listening: "వింటోంది…",
+    speaking: "సమాధానం చెబుతోంది…",
     thinking: "వివరణ సిద్ధమవుతోంది…",
     placeholder: "అంశం, ప్రశ్న, టెస్ట్ లేదా చదువు ప్రణాళిక గురించి అడగండి…",
     send: "సందేశం పంపండి",
@@ -109,20 +112,27 @@ function HologramAvatar({ state }) {
       </div>
       <div className="holo-scanlines" aria-hidden="true" />
       <div className="holo-state-label">
-        <span /> {state === "listening" ? "VOICE LINK" : state === "thinking" ? "PROCESSING" : "READY"}
+        <span /> {state === "listening" ? "VOICE LINK" : state === "thinking" ? "PROCESSING" : state === "speaking" ? "SPEAKING" : "READY"}
       </div>
     </div>
   );
 }
 
-function speakReply(text, locale) {
-  if (!("speechSynthesis" in window) || !text) return;
+function speakReply(text, locale, { onStart, onEnd } = {}) {
+  if (!("speechSynthesis" in window) || !text) {
+    onEnd?.();
+    return false;
+  }
   window.speechSynthesis.cancel();
   const utterance = new SpeechSynthesisUtterance(text);
   utterance.lang = SPEECH_LOCALES[locale] || SPEECH_LOCALES.en;
   utterance.rate = 0.96;
   utterance.pitch = 1.03;
+  utterance.onstart = () => onStart?.();
+  utterance.onend = () => onEnd?.();
+  utterance.onerror = () => onEnd?.();
   window.speechSynthesis.speak(utterance);
+  return true;
 }
 
 export function HologramTutorPage({ course, user }) {
@@ -132,13 +142,16 @@ export function HologramTutorPage({ course, user }) {
   const [draft, setDraft] = useState("");
   const [busy, setBusy] = useState(false);
   const [listening, setListening] = useState(false);
+  const [speaking, setSpeaking] = useState(false);
   const [voiceReplies, setVoiceReplies] = useState(true);
   const [aiConnected, setAiConnected] = useState(false);
   const [notice, setNotice] = useState("");
   const recognitionRef = useRef(null);
+  const voiceTranscriptRef = useRef("");
+  const voiceShouldSubmitRef = useRef(false);
   const transcriptRef = useRef(null);
 
-  const avatarState = listening ? "listening" : busy ? "thinking" : "ready";
+  const avatarState = listening ? "listening" : busy ? "thinking" : speaking ? "speaking" : "ready";
   const topics = useMemo(
     () => course.blueprint.flatMap((section) => section.topics.map(([topic]) => topic)).slice(0, 8),
     [course],
@@ -149,6 +162,8 @@ export function HologramTutorPage({ course, user }) {
     setDraft("");
     setNotice("");
     setAiConnected(false);
+    setSpeaking(false);
+    window.speechSynthesis?.cancel?.();
   }, [copy.intro, course.key]);
 
   useEffect(() => {
@@ -164,6 +179,8 @@ export function HologramTutorPage({ course, user }) {
     const question = String(value || "").trim();
     if (!question || busy) return;
     const nextMessages = [...messages, { role: "user", content: question }];
+    window.speechSynthesis?.cancel?.();
+    setSpeaking(false);
     setMessages(nextMessages);
     setDraft("");
     setNotice("");
@@ -175,13 +192,16 @@ export function HologramTutorPage({ course, user }) {
           message: question,
           locale,
           course: course.key,
-          history: messages.slice(-6),
+          history: messages.slice(-10),
         }),
       });
       const reply = String(payload.reply || copy.error);
       setMessages((current) => [...current, { role: "assistant", content: reply }]);
       setAiConnected(Boolean(payload.aiConnected));
-      if (voiceReplies) speakReply(reply, locale);
+      if (voiceReplies) speakReply(reply, locale, {
+        onStart: () => setSpeaking(true),
+        onEnd: () => setSpeaking(false),
+      });
     } catch (error) {
       setMessages((current) => [...current, { role: "assistant", content: copy.error }]);
       setNotice(error.message || copy.error);
@@ -205,13 +225,34 @@ export function HologramTutorPage({ course, user }) {
     recognition.lang = SPEECH_LOCALES[locale] || SPEECH_LOCALES.en;
     recognition.interimResults = true;
     recognition.continuous = false;
-    recognition.onstart = () => { setListening(true); setNotice(""); };
+    recognition.maxAlternatives = 1;
+    recognition.onstart = () => {
+      window.speechSynthesis?.cancel?.();
+      setSpeaking(false);
+      setListening(true);
+      setNotice("");
+      voiceTranscriptRef.current = "";
+      voiceShouldSubmitRef.current = false;
+    };
     recognition.onresult = (event) => {
       const text = Array.from(event.results).map((result) => result[0].transcript).join(" ");
+      voiceTranscriptRef.current = text;
+      voiceShouldSubmitRef.current = Array.from(event.results).some((result) => result.isFinal);
       setDraft(text);
     };
-    recognition.onerror = () => setNotice(copy.microphoneUnsupported);
-    recognition.onend = () => setListening(false);
+    recognition.onspeechend = () => recognition.stop();
+    recognition.onerror = () => {
+      voiceShouldSubmitRef.current = false;
+      setNotice(copy.microphoneUnsupported);
+    };
+    recognition.onend = () => {
+      setListening(false);
+      const spokenQuestion = voiceTranscriptRef.current.trim();
+      const shouldSubmit = voiceShouldSubmitRef.current && Boolean(spokenQuestion);
+      voiceTranscriptRef.current = "";
+      voiceShouldSubmitRef.current = false;
+      if (shouldSubmit) setTimeout(() => submitMessage(spokenQuestion), 0);
+    };
     recognitionRef.current = recognition;
     recognition.start();
   };
@@ -236,7 +277,7 @@ export function HologramTutorPage({ course, user }) {
           <div className="hologram-identity">
             <span>VIJETHA LEARNING SYSTEM</span>
             <h2>Holo Tutor</h2>
-            <p>{listening ? copy.listening : busy ? copy.thinking : `${course.shortName} · ${user.name.split(" ")[0]}`}</p>
+            <p>{listening ? copy.listening : busy ? copy.thinking : speaking ? copy.speaking : `${course.shortName} · ${user.name.split(" ")[0]}`}</p>
           </div>
           <div className="hologram-topic-cloud">
             {topics.map((topic) => <span key={topic}>{topic}</span>)}
@@ -254,6 +295,7 @@ export function HologramTutorPage({ course, user }) {
               onClick={() => {
                 setVoiceReplies((enabled) => !enabled);
                 window.speechSynthesis?.cancel?.();
+                setSpeaking(false);
               }}
             >
               {voiceReplies ? <Volume2 size={17} /> : <VolumeX size={17} />}

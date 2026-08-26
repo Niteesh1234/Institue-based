@@ -23,6 +23,7 @@ import {
   Clock,
   Database,
   FileText,
+  FileUp,
   GraduationCap,
   LayoutDashboard,
   LogIn,
@@ -65,8 +66,15 @@ import {
   clearNativeSession,
 } from "./api-client.js";
 import { ResourcesPage, StudentResourcesPortal } from "./resources.jsx";
+import { BatchExamsPage } from "./batch-exams.jsx";
 import { createExamSet, EXAM_SET_CODES } from "../exam-set-engine.js";
 import { HologramTutorPage } from "./hologram-tutor.jsx";
+import {
+  canPrintPapers,
+  isPrincipalRole,
+  PrincipalControlPage,
+  useInstituteControlState,
+} from "./institute-control.jsx";
 
 const BATCHES = [
   {
@@ -100,15 +108,25 @@ const RANKS = [
 ];
 
 const DEMO_STUDENTS = [
-  { id: "demo-aarav", name: "Aarav Nair", batch: "JNVST Morning A", progress: 86, status: "On track", lastActive: "Today, 10:42" },
-  { id: "demo-saanvi", name: "Saanvi Kumar", batch: "JNVST Morning A", progress: 72, status: "On track", lastActive: "Today, 09:18" },
-  { id: "demo-jiya", name: "Jiya Lal", batch: "JNVST Evening B", progress: 48, status: "At risk", lastActive: "Aug 18" },
-  { id: "demo-rehan", name: "Rehan Malik", batch: "JNVST Weekend", progress: 64, status: "Needs review", lastActive: "Yesterday" },
+  { id: "demo-aarav", name: "Aarav Nair", initials: "AN", guardian: "Meera Nair", batch: "JNVST Morning A", progress: 86, state: "On track", tone: "green", last: "Today, 10:42" },
+  { id: "demo-saanvi", name: "Saanvi Kumar", initials: "SK", guardian: "Rohan Kumar", batch: "JNVST Morning A", progress: 72, state: "On track", tone: "green", last: "Today, 09:18" },
+  { id: "demo-jiya", name: "Jiya Lal", initials: "JL", guardian: "Mohan Lal", batch: "JNVST Evening B", progress: 48, state: "At risk", tone: "red", last: "Aug 18" },
+  { id: "demo-rehan", name: "Rehan Malik", initials: "RM", guardian: "Sana Malik", batch: "JNVST Weekend", progress: 64, state: "Needs review", tone: "amber", last: "Yesterday" },
 ];
 
 const STATIC_BANK_URL = `${import.meta.env.BASE_URL}generated`;
 const EXPECTED_LEVELS = ["Easy", "Medium", "Challenging"];
 const QUESTION_DATA_TIMEOUT_MS = 7000;
+const BATCH_STORAGE_KEY = "vijetha-batches-v1";
+
+function initialBatches() {
+  try {
+    const saved = JSON.parse(window.localStorage.getItem(BATCH_STORAGE_KEY) || "null");
+    return Array.isArray(saved) && saved.length ? saved.slice(0, 12) : BATCHES;
+  } catch {
+    return BATCHES;
+  }
+}
 
 async function fetchQuestionResponse(url, signal) {
   const controller = new AbortController();
@@ -164,7 +182,11 @@ function userInitials(name = "Vijetha User") {
 }
 
 function roleLabel(role) {
-  return role === "administrator" ? "Institute administrator" : "Institute teacher";
+  return ["administrator", "principal"].includes(role)
+    ? "Principal administrator"
+    : role === "student"
+      ? "Student"
+      : "Institute teacher";
 }
 
 function optionLabel(option) {
@@ -207,6 +229,46 @@ function normalizeFullCatalog(tests) {
   }));
 }
 
+function parseStudentCsv(content, defaultBatch) {
+  const lines = content.split(/\r?\n/).filter((line) => line.trim());
+  if (lines.length < 2) throw new Error("The CSV must contain a header and at least one student.");
+  const readRow = (line) => {
+    const cells = [];
+    let value = "";
+    let quoted = false;
+    for (let index = 0; index < line.length; index += 1) {
+      const char = line[index];
+      if (char === '"' && line[index + 1] === '"') { value += '"'; index += 1; }
+      else if (char === '"') quoted = !quoted;
+      else if (char === "," && !quoted) { cells.push(value.trim()); value = ""; }
+      else value += char;
+    }
+    cells.push(value.trim());
+    return cells;
+  };
+  const headers = readRow(lines[0]).map((item) => item.toLowerCase().replace(/[^a-z]/g, ""));
+  const rows = lines.slice(1).map((line, index) => {
+    const values = readRow(line);
+    const row = Object.fromEntries(headers.map((header, column) => [header, values[column] || ""]));
+    const student = {
+      name: row.name || row.studentname,
+      email: row.email || row.studentemail || "",
+      phone: row.phone || row.studentphone || "",
+      guardian: row.guardian || row.guardianname || "Parent / Guardian",
+      guardianEmail: row.guardianemail || "",
+      guardianPhone: row.guardianphone || "",
+      batch: row.batch || defaultBatch,
+      progress: Number(row.progress || 0),
+    };
+    if (!student.name || student.name.length < 2) throw new Error(`Row ${index + 2} needs a valid student name.`);
+    if (!student.batch) throw new Error(`Row ${index + 2} needs a batch.`);
+    return student;
+  });
+  const names = rows.map((row) => row.name.toLowerCase().replace(/\s+/g, " ").trim());
+  if (new Set(names).size !== names.length) throw new Error("The CSV contains duplicate student names.");
+  return rows;
+}
+
 function validateFullCatalog(tests, course) {
   if (tests.length !== 30)
     throw new Error(
@@ -240,6 +302,7 @@ const NAV_ITEMS = [
   ["Students", Users],
   ["Classes", CalendarDays],
   ["Mock Tests", ClipboardCheck],
+  ["Batch Exams", ShieldCheck],
   ["Resources", FileText],
   ["Progress", BarChart3],
   ["Parents", MessageSquare],
@@ -252,11 +315,13 @@ const NAV_MESSAGE_KEYS = {
   Students: "students",
   Classes: "classes",
   "Mock Tests": "mockTests",
+  "Batch Exams": "batchExams",
   Resources: "resources",
   Progress: "progress",
   Parents: "parents",
   Syllabus: "syllabus",
   Settings: "settings",
+  "Principal Control": "principalControl",
 };
 
 const LANDING_COPY = {
@@ -321,7 +386,8 @@ function App() {
   const [studentStatus, setStudentStatus] = useState("idle");
   const [studentError, setStudentError] = useState("");
   const [studentReloadKey, setStudentReloadKey] = useState(0);
-  const [batchRows, setBatchRows] = useState(BATCHES);
+  const [batchRows, setBatchRows] = useState(initialBatches);
+  const [instituteControl, setInstituteControl] = useInstituteControlState();
   const [fullTests, setFullTests] = useState([]);
   const [aggregation, setAggregation] = useState([]);
   const [catalogStatus, setCatalogStatus] = useState("loading");
@@ -332,6 +398,7 @@ function App() {
   const [testLoadStatus, setTestLoadStatus] = useState("idle");
   const [testLoadError, setTestLoadError] = useState("");
   const [workspaceOpen, setWorkspaceOpen] = useState(false);
+  const [resourceUploadRequest, setResourceUploadRequest] = useState(0);
   const [notificationOpen, setNotificationOpen] = useState(false);
   const [accountOpen, setAccountOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -339,9 +406,18 @@ function App() {
   const searchRef = useRef(null);
   const course = getExamCourse(courseKey);
   const currentUser = authUser || { name: "Vijetha User", email: "", role: "teacher" };
+  const principalAccess = isPrincipalRole(currentUser);
+  const visibleNavItems = principalAccess
+    ? [...NAV_ITEMS, ["Principal Control", ShieldCheck]]
+    : NAV_ITEMS;
+  const printAccess = canPrintPapers(currentUser, instituteControl);
   const studentAccessCode =
     new URLSearchParams(window.location.hash.slice(1)).get("studentAccess") ||
     new URLSearchParams(window.location.search).get("studentAccess");
+
+  useEffect(() => {
+    window.localStorage.setItem(BATCH_STORAGE_KEY, JSON.stringify(batchRows.slice(0, 12)));
+  }, [batchRows]);
 
   useEffect(() => {
     if (!IS_NATIVE_APP) return undefined;
@@ -372,7 +448,7 @@ function App() {
   }, [mobileOpen, stage, studioOpen]);
 
   const searchItems = useMemo(() => {
-    const pages = [...NAV_ITEMS.map(([label]) => label), "Settings"].map(
+    const pages = [...visibleNavItems.map(([label]) => label), "Settings"].map(
       (label) => ({ label, detail: "Workspace page", destination: label }),
     );
     const students = studentRows.map((student) => ({
@@ -392,7 +468,7 @@ function App() {
         `${item.label} ${item.detail}`.toLowerCase().includes(query),
       )
       .slice(0, 8);
-  }, [batchRows, searchQuery, studentRows]);
+  }, [batchRows, searchQuery, studentRows, visibleNavItems]);
 
   useEffect(() => {
     const focusSearch = (event) => {
@@ -620,7 +696,7 @@ function App() {
         </div>
         <p className="nav-label">{t("workspace")}</p>
         <nav>
-          {NAV_ITEMS.map(([label, Icon]) => (
+          {visibleNavItems.map(([label, Icon]) => (
             <button
               type="button"
               key={label}
@@ -805,10 +881,16 @@ function App() {
               onRetry={() => setStudentReloadKey((key) => key + 1)}
               course={course}
               batches={batchRows}
+              demo={Boolean(currentUser.demo)}
             />
           )}
           {active === "Classes" && (
-            <ClassesPage batches={batchRows} setBatches={setBatchRows} />
+            <ClassesPage
+              batches={batchRows}
+              setBatches={setBatchRows}
+              canManage={principalAccess}
+              maxBatches={instituteControl.policies.maxBatches}
+            />
           )}
           {active === "Mock Tests" && (
             <MockTestsPage
@@ -819,6 +901,17 @@ function App() {
               dataSource={dataSource}
               onRetry={retryCatalog}
               onOpen={openStudio}
+              canPrint={printAccess}
+            />
+          )}
+          {active === "Batch Exams" && (
+            <BatchExamsPage
+              course={course}
+              batches={batchRows}
+              students={studentRows}
+              tests={fullTests}
+              user={currentUser}
+              demo={Boolean(currentUser.demo)}
             />
           )}
           {active === "Resources" && (
@@ -826,12 +919,28 @@ function App() {
               course={course}
               students={studentRows}
               demo={Boolean(currentUser.demo)}
+              openUploadRequest={resourceUploadRequest}
               onOpenStudents={() => navigateWorkspace("Students")}
             />
           )}
           {active === "Progress" && <ProgressPage students={studentRows} />}
           {active === "Parents" && <ParentsPage students={studentRows} />}
           {active === "Syllabus" && <SyllabusPage course={course} />}
+          {active === "Principal Control" && (
+            <PrincipalControlPage
+              user={currentUser}
+              course={course}
+              batches={batchRows}
+              students={studentRows}
+              control={instituteControl}
+              setControl={setInstituteControl}
+              onOpenBatchExams={() => navigateWorkspace("Batch Exams")}
+              onOpenPdfUpload={() => {
+                setResourceUploadRequest(Date.now());
+                navigateWorkspace("Resources");
+              }}
+            />
+          )}
           {active === "Settings" && (
             <SettingsPage course={course} onCourseChange={changeCourse} />
           )}
@@ -852,6 +961,7 @@ function App() {
             testLoadStatus={testLoadStatus}
             testLoadError={testLoadError}
             close={() => setStudioOpen(false)}
+            canPrint={printAccess}
           />
         </TestStudioBoundary>
       )}
@@ -1197,7 +1307,7 @@ function LoginPage({ onBack, onLogin, configured }) {
           <button
             type="button"
             className="button demo-access-button"
-            onClick={() => onLogin({ id: "public-demo", name: "Amara Khan", email: "demo@vijetha.in", role: "teacher", demo: true })}
+            onClick={() => onLogin({ id: "public-demo", name: "Amara Khan", email: "demo@vijetha.in", role: "administrator", demo: true })}
           >
             <ArrowRight size={17} /> {t("continueDemo")}
           </button>
@@ -1459,6 +1569,7 @@ function StudentsPage({
   onRetry,
   course,
   batches,
+  demo,
 }) {
   const courseBatches = useMemo(() => {
     const matching = batches
@@ -1490,6 +1601,8 @@ function StudentsPage({
   const [saving, setSaving] = useState(false);
   const [deleteId, setDeleteId] = useState(null);
   const [deleting, setDeleting] = useState(false);
+  const [importing, setImporting] = useState(false);
+  const importRef = useRef(null);
 
   useEffect(() => {
     setQuery("");
@@ -1525,7 +1638,7 @@ function StudentsPage({
       name: student.name,
       email: student.email || "",
       phone: student.phone || "",
-      guardian: student.guardian,
+      guardian: student.guardian || "Parent / Guardian",
       guardianEmail: student.guardianEmail || "",
       guardianPhone: student.guardianPhone || "",
       batch: student.batch,
@@ -1540,6 +1653,25 @@ function StudentsPage({
     setSaving(true);
     setFormError("");
     try {
+      if (demo) {
+        const progress = Math.max(0, Math.min(100, Math.round(Number(form.progress) || 0)));
+        const demoStudent = {
+          ...form,
+          progress,
+          id: editingId || `demo-student-${Date.now()}`,
+          initials: userInitials(form.name),
+          state: progress >= 70 ? "On track" : progress >= 50 ? "Needs review" : "At risk",
+          tone: progress >= 70 ? "green" : progress >= 50 ? "amber" : "red",
+          last: "Just now",
+        };
+        setStudents((rows) => (
+          editingId
+            ? rows.map((row) => row.id === editingId ? demoStudent : row)
+            : [...rows, demoStudent].sort((a, b) => a.name.localeCompare(b.name))
+        ));
+        closeForm();
+        return;
+      }
       const path = editingId
         ? `/api/students?id=${encodeURIComponent(editingId)}`
         : "/api/students";
@@ -1563,9 +1695,11 @@ function StudentsPage({
     setDeleting(true);
     setFormError("");
     try {
-      await authRequest(`/api/students?id=${encodeURIComponent(student.id)}`, {
-        method: "DELETE",
-      });
+      if (!demo) {
+        await authRequest(`/api/students?id=${encodeURIComponent(student.id)}`, {
+          method: "DELETE",
+        });
+      }
       setStudents((rows) => rows.filter((row) => row.id !== student.id));
       setDeleteId(null);
       if (editingId === student.id) closeForm();
@@ -1573,6 +1707,47 @@ function StudentsPage({
       setFormError(requestError.message || "The student could not be removed.");
     } finally {
       setDeleting(false);
+    }
+  };
+  const importStudents = async (event) => {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) return;
+    setImporting(true);
+    setFormError("");
+    try {
+      const rows = parseStudentCsv(await file.text(), courseBatches[0]);
+      if (students.length + rows.length > 500) throw new Error("A course roster can contain at most 500 students.");
+      if (demo) {
+        const imported = rows.map((row, index) => {
+          const progress = Math.max(0, Math.min(100, Math.round(Number(row.progress) || 0)));
+          return {
+            ...row,
+            id: `demo-import-${Date.now()}-${index}`,
+            initials: userInitials(row.name),
+            state: progress >= 70 ? "On track" : progress >= 50 ? "Needs review" : "At risk",
+            tone: progress >= 70 ? "green" : progress >= 50 ? "amber" : "red",
+            progress,
+            last: "Just now",
+          };
+        });
+        setStudents((current) => [...current, ...imported].sort((a, b) => a.name.localeCompare(b.name)));
+      } else {
+        const created = [];
+        for (const row of rows) {
+          const payload = await authRequest("/api/students", {
+            method: "POST",
+            body: JSON.stringify({ ...row, course: course.key }),
+          });
+          created.push(payload.student);
+        }
+        setStudents((current) => [...current, ...created].sort((a, b) => a.name.localeCompare(b.name)));
+      }
+      setFormError(`${rows.length} students imported successfully.`);
+    } catch (requestError) {
+      setFormError(requestError.message || "The student CSV could not be imported.");
+    } finally {
+      setImporting(false);
     }
   };
   return (
@@ -1605,8 +1780,14 @@ function StudentsPage({
           >
             <UserPlus size={16} /> Add student
           </button>
+          <input ref={importRef} className="sr-only" type="file" accept=".csv,text/csv" onChange={importStudents} />
+          <button type="button" className="button secondary" disabled={importing} onClick={() => importRef.current?.click()}>
+            {importing ? <RefreshCw className="spin" size={16} /> : <FileUp size={16} />} {importing ? "Importing…" : "Import CSV"}
+          </button>
+          <a className="button secondary roster-template-link" href="/student-import-template.csv" download>CSV template</a>
         </div>
       </PageHeading>
+      {formError && !formOpen ? <div className={`control-notice ${formError.includes("successfully") ? "" : "error"}`} role="status">{formError.includes("successfully") ? <Check size={16} /> : <AlertCircle size={16} />}{formError}</div> : null}
       {formOpen ? (
         <section className="panel student-form-panel" aria-label={editingId ? "Edit student" : "Add student"}>
           <div className="panel-heading compact-heading">
@@ -1703,7 +1884,7 @@ function StudentsPage({
   );
 }
 
-function ClassesPage({ batches, setBatches }) {
+function ClassesPage({ batches, setBatches, canManage, maxBatches = 12 }) {
   const emptyForm = {
     name: "",
     mentor: "",
@@ -1714,11 +1895,21 @@ function ClassesPage({ batches, setBatches }) {
   const [formOpen, setFormOpen] = useState(false);
   const [form, setForm] = useState(emptyForm);
   const [selectedName, setSelectedName] = useState("");
+  const [formError, setFormError] = useState("");
   const selectedBatch = batches.find((batch) => batch.name === selectedName);
   const updateField = (field, value) =>
     setForm((current) => ({ ...current, [field]: value }));
   const createBatch = (event) => {
     event.preventDefault();
+    setFormError("");
+    if (!canManage) {
+      setFormError("Only the principal administrator can create batches.");
+      return;
+    }
+    if (batches.length >= maxBatches) {
+      setFormError(`The institute limit is ${maxBatches} batches.`);
+      return;
+    }
     const cleanName = form.name.trim();
     const cleanMentor = form.mentor.trim();
     if (!cleanName || !cleanMentor) return;
@@ -1745,16 +1936,19 @@ function ClassesPage({ batches, setBatches }) {
       <PageHeading
         kicker="BATCHES & SCHEDULE"
         title="Classes"
-        copy="Keep teaching plans connected to the unchanged JNVST syllabus."
+        copy={`Keep teaching plans connected to the syllabus. ${batches.length} of ${maxBatches} batches are in use.`}
       >
-        <button
-          type="button"
-          className="button primary"
-          aria-expanded={formOpen}
-          onClick={() => setFormOpen((open) => !open)}
-        >
-          <Plus size={16} /> Create batch
-        </button>
+        {canManage ? (
+          <button
+            type="button"
+            className="button primary"
+            aria-expanded={formOpen}
+            disabled={batches.length >= maxBatches}
+            onClick={() => { setFormError(""); setFormOpen((open) => !open); }}
+          >
+            <Plus size={16} /> {batches.length >= maxBatches ? "12-batch limit reached" : "Create batch"}
+          </button>
+        ) : null}
       </PageHeading>
       {formOpen ? (
         <form className="panel batch-form" onSubmit={createBatch}>
@@ -1798,6 +1992,7 @@ function ClassesPage({ batches, setBatches }) {
             <button type="button" className="button secondary" onClick={() => setFormOpen(false)}>Cancel</button>
             <button type="submit" className="button primary"><Plus size={15} /> Save batch</button>
           </div>
+          {formError ? <div className="auth-alert error" role="alert"><AlertCircle size={15} /> {formError}</div> : null}
         </form>
       ) : null}
       {selectedBatch ? (
@@ -1809,16 +2004,18 @@ function ClassesPage({ batches, setBatches }) {
             <strong>Next lesson: {selectedBatch.next}</strong>
           </div>
           <div className="form-actions">
-            <button
-              type="button"
-              className="button secondary danger-button"
-              onClick={() => {
-                setBatches((current) => current.filter((batch) => batch.name !== selectedBatch.name));
-                setSelectedName("");
-              }}
-            >
-              <Trash2 size={15} /> Remove batch
-            </button>
+            {canManage ? (
+              <button
+                type="button"
+                className="button secondary danger-button"
+                onClick={() => {
+                  setBatches((current) => current.filter((batch) => batch.name !== selectedBatch.name));
+                  setSelectedName("");
+                }}
+              >
+                <Trash2 size={15} /> Remove batch
+              </button>
+            ) : null}
             <button type="button" className="icon-button" aria-label="Close class details" onClick={() => setSelectedName("")}><X size={18} /></button>
           </div>
         </section>
@@ -1937,7 +2134,7 @@ function SettingsPage({ course, onCourseChange }) {
   );
 }
 
-function MockTestsPage({ course, tests, status, error, dataSource, onRetry, onOpen }) {
+function MockTestsPage({ course, tests, status, error, dataSource, onRetry, onOpen, canPrint }) {
   const groups = EXPECTED_LEVELS.map((level) => ({
     level,
     tests: tests.filter((test) => test.level === level),
@@ -1949,13 +2146,15 @@ function MockTestsPage({ course, tests, status, error, dataSource, onRetry, onOp
         title={`${course.shortName} mock tests`}
         copy={`Ten Easy, ten Medium, and ten Challenging papers—each following the ${course.standard.questionsPerPaper}-question ${course.shortName} Class VI blueprint.`}
       >
-        <button
-          type="button"
-          className="button secondary"
-          onClick={() => window.print()}
-        >
-          <Printer size={16} /> Print list
-        </button>
+        {canPrint ? (
+          <button
+            type="button"
+            className="button secondary"
+            onClick={() => window.print()}
+          >
+            <Printer size={16} /> Print list
+          </button>
+        ) : null}
         <button
           type="button"
           className="button primary"
@@ -2805,12 +3004,12 @@ function TestStudio({
   testLoadStatus,
   testLoadError,
   close,
+  canPrint,
 }) {
   const { locale, t, text, subject, test: localizeTest } = useI18n();
   const [levelFilter, setLevelFilter] = useState("All levels");
   const [currentIndex, setCurrentIndex] = useState(0);
   const [answers, setAnswers] = useState({});
-  const [checked, setChecked] = useState(new Set());
   const [bookmarked, setBookmarked] = useState(new Set());
   const [remainingSeconds, setRemainingSeconds] = useState(
     course.standard.durationMinutes * 60,
@@ -2869,7 +3068,6 @@ function TestStudio({
   useEffect(() => {
     setCurrentIndex(0);
     setAnswers({});
-    setChecked(new Set());
     setBookmarked(new Set());
     setRemainingSeconds(course.standard.durationMinutes * 60);
     setSubmitted(false);
@@ -2908,21 +3106,6 @@ function TestStudio({
   const chooseOption = (optionId) => {
     if (!question || submitted) return;
     setAnswers((current) => ({ ...current, [question.questionId]: optionId }));
-    setChecked((current) => {
-      const next = new Set(current);
-      next.delete(question.questionId);
-      return next;
-    });
-  };
-  const toggleChecked = () => {
-    if (!question || !answers[question.questionId]) return;
-    setChecked((current) => {
-      const next = new Set(current);
-      next.has(question.questionId)
-        ? next.delete(question.questionId)
-        : next.add(question.questionId);
-      return next;
-    });
   };
   const toggleBookmark = () =>
     question &&
@@ -2934,7 +3117,7 @@ function TestStudio({
       return next;
     });
   const printCompletePaper = async (setCode, mode) => {
-    if (printPreparing) return;
+    if (printPreparing || !canPrint) return;
     setActivePrintSet(setCode);
     setPrintDialogMode(null);
     setPrintPreparing(true);
@@ -2969,8 +3152,7 @@ function TestStudio({
       setPrintPreparing(false);
     }
   };
-  const revealAnswer =
-    submitted || (question && checked.has(question.questionId));
+  const revealAnswer = submitted;
 
   useEffect(() => {
     document.body.classList.toggle("print-runner-active", Boolean(test));
@@ -3056,25 +3238,29 @@ function TestStudio({
                   {t("syllabus")}: {course.blueprint.map((section) => `${subject(section.subject)} ${coverage[section.subject] || 0}`).join(" · ")}
                 </span>
               </div>
-              <button
-                type="button"
-                className="runner-utility"
-                onClick={() => setPrintDialogMode("print")}
-                disabled={printPreparing}
-              >
-                <Printer size={16} /> {printPreparing ? t("preparingPaper") : t("printComplete")}
-              </button>
-              <button
-                type="button"
-                className="runner-utility accent"
-                onClick={() => setPrintDialogMode("pdf")}
-                disabled={printPreparing}
-              >
-                <FileText size={16} /> {printPreparing ? t("preparingPaper") : t("savePdf")}
-              </button>
-              <p className="runner-print-help">
-                {t("printSettings")}
-              </p>
+              {canPrint ? (
+                <>
+                  <button
+                    type="button"
+                    className="runner-utility"
+                    onClick={() => setPrintDialogMode("print")}
+                    disabled={printPreparing}
+                  >
+                    <Printer size={16} /> {printPreparing ? t("preparingPaper") : t("printComplete")}
+                  </button>
+                  <button
+                    type="button"
+                    className="runner-utility accent"
+                    onClick={() => setPrintDialogMode("pdf")}
+                    disabled={printPreparing}
+                  >
+                    <FileText size={16} /> {printPreparing ? t("preparingPaper") : t("savePdf")}
+                  </button>
+                  <p className="runner-print-help">{t("printSettings")}</p>
+                </>
+              ) : (
+                <div className="runner-print-locked"><ShieldCheck size={16} /> Printing is controlled by the principal.</div>
+              )}
               <div className="runner-progress-meta">
                 <span>
                   <b>{answeredCount}</b> {t("answered")}
@@ -3247,13 +3433,7 @@ function TestStudio({
                     : t("bookmark")}
                 </button>
                 <span />
-                <button
-                  type="button"
-                  disabled={!answers[question.questionId]}
-                  onClick={toggleChecked}
-                >
-                  {revealAnswer && !submitted ? t("hideAnswer") : t("checkAnswer")}
-                </button>
+                {!submitted ? <small className="answer-policy-note">Answers are checked only after final submission.</small> : null}
                 <button
                   type="button"
                   className="next"
@@ -3264,15 +3444,19 @@ function TestStudio({
                 </button>
               </footer>
             </main>
-            <ExamSetDialog
-              mode={printDialogMode}
-              selectedSet={selectedPrintSet}
-              preparing={printPreparing}
-              onSelect={setSelectedPrintSet}
-              onClose={() => setPrintDialogMode(null)}
-              onConfirm={printCompletePaper}
-            />
-            <PrintPaper course={course} test={printableTest} setCode={activePrintSet} />
+            {canPrint ? (
+              <>
+                <ExamSetDialog
+                  mode={printDialogMode}
+                  selectedSet={selectedPrintSet}
+                  preparing={printPreparing}
+                  onSelect={setSelectedPrintSet}
+                  onClose={() => setPrintDialogMode(null)}
+                  onConfirm={printCompletePaper}
+                />
+                <PrintPaper course={course} test={printableTest} setCode={activePrintSet} />
+              </>
+            ) : null}
           </div>
         ) : (
           <>
@@ -3299,13 +3483,15 @@ function TestStudio({
                 <option value="Medium">{t("medium")}</option>
                 <option value="Challenging">{t("challenging")}</option>
               </select>
-              <button
-                type="button"
-                className="button primary small"
-                onClick={() => window.print()}
-              >
-                <Printer size={15} /> {t("printTestList")}
-              </button>
+              {canPrint ? (
+                <button
+                  type="button"
+                  className="button primary small"
+                  onClick={() => window.print()}
+                >
+                  <Printer size={15} /> {t("printTestList")}
+                </button>
+              ) : null}
             </div>
             {visibleTests.length > 0 ? (
               <div className="test-grid">

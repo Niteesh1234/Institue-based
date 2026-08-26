@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import resourcesHandler from '../api/resources.js';
-import { normalizeResourceInput, resourceLimits } from '../resource-service.js';
+import { decodeResourceFile, normalizeResourceInput, resourceLimits } from '../resource-service.js';
 
 function responseRecorder() {
   return {
@@ -36,6 +36,22 @@ assert.throws(() => normalizeResourceInput({ course: 'other', type: 'test', titl
 assert.equal(resourceLimits.maxFileBytes, 3 * 1024 * 1024);
 assert.equal(resourceLimits.allowedMimeTypes.includes('application/pdf'), true);
 assert.equal(resourceLimits.allowedMimeTypes.includes('text/html'), false, 'Executable HTML uploads must not be allowed.');
+const validPdf = decodeResourceFile({
+  fileName: 'institute-test.pdf',
+  mimeType: 'application/pdf',
+  dataBase64: Buffer.from('%PDF-1.7\nvalidated test paper').toString('base64'),
+});
+assert.equal(validPdf.mimeType, 'application/pdf');
+assert.throws(() => decodeResourceFile({
+  fileName: 'renamed.pdf',
+  mimeType: 'application/pdf',
+  dataBase64: Buffer.from('This is not a PDF').toString('base64'),
+}), /not a valid PDF/);
+assert.throws(() => decodeResourceFile({
+  fileName: 'wrong-extension.txt',
+  mimeType: 'application/pdf',
+  dataBase64: Buffer.from('%PDF-1.7\ncontent').toString('base64'),
+}), /\.pdf extension/);
 
 delete process.env.MONGODB_URI;
 delete process.env.AUTH_SECRET;

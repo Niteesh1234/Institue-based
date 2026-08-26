@@ -127,7 +127,7 @@ function demoRows(course, students) {
   }];
 }
 
-export function ResourcesPage({ course, students, demo, onOpenStudents }) {
+export function ResourcesPage({ course, students, demo, onOpenStudents, openUploadRequest = 0 }) {
   const { locale } = useI18n();
   const copy = RESOURCE_COPY[locale] || RESOURCE_COPY.en;
   const emptyForm = () => ({ type: 'note', title: '', description: '', studentIds: [] });
@@ -169,6 +169,15 @@ export function ResourcesPage({ course, students, demo, onOpenStudents }) {
     setSharedUrl('');
     load();
   }, [course.key, demo, students.length]);
+
+  useEffect(() => {
+    if (!openUploadRequest || !students.length) return;
+    setForm({ ...emptyForm(), type: 'test' });
+    setEditingId('');
+    setFile(null);
+    setError('');
+    setFormOpen(true);
+  }, [openUploadRequest, students.length]);
 
   const closeForm = () => {
     setFormOpen(false);
