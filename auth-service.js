@@ -1,9 +1,9 @@
 import { createHash, createHmac, randomBytes, randomInt, scrypt as scryptCallback, timingSafeEqual } from 'node:crypto';
 import { promisify } from 'node:util';
-import { MongoClient } from 'mongodb';
+import { VIJETHA_COLLECTIONS, VIJETHA_INSTITUTE_ID } from './database-config.js';
+import { getVijethaDatabase } from './mongo-runtime.js';
 
 const scrypt = promisify(scryptCallback);
-const databaseName = 'Testing';
 const sessionCookieName = 'vijetha_session';
 const otpLifetimeMs = 10 * 60 * 1000;
 const sessionLifetimeMs = 7 * 24 * 60 * 60 * 1000;
@@ -11,8 +11,6 @@ const loginWindowMs = 15 * 60 * 1000;
 const passwordPattern = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{10,128}$/;
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const nativeOrigins = new Set(['https://localhost', 'capacitor://localhost']);
-let client;
-let database;
 let indexPromise;
 
 export class AuthError extends Error {
@@ -59,12 +57,13 @@ export function validatePassword(password) {
 async function ensureIndexes(db) {
   if (!indexPromise) {
     indexPromise = Promise.all([
-      db.collection('auth_users').createIndex({ email: 1 }, { unique: true }),
-      db.collection('auth_otps').createIndex({ expiresAt: 1 }, { expireAfterSeconds: 0 }),
-      db.collection('auth_otps').createIndex({ email: 1, purpose: 1, createdAt: -1 }),
-      db.collection('auth_sessions').createIndex({ tokenHash: 1 }, { unique: true }),
-      db.collection('auth_sessions').createIndex({ expiresAt: 1 }, { expireAfterSeconds: 0 }),
-      db.collection('auth_attempts').createIndex({ expiresAt: 1 }, { expireAfterSeconds: 0 })
+      db.collection(VIJETHA_COLLECTIONS.authUsers).createIndex({ email: 1 }, { unique: true }),
+      db.collection(VIJETHA_COLLECTIONS.authUsers).createIndex({ instituteId: 1, status: 1, role: 1 }),
+      db.collection(VIJETHA_COLLECTIONS.authOtps).createIndex({ expiresAt: 1 }, { expireAfterSeconds: 0 }),
+      db.collection(VIJETHA_COLLECTIONS.authOtps).createIndex({ email: 1, purpose: 1, createdAt: -1 }),
+      db.collection(VIJETHA_COLLECTIONS.authSessions).createIndex({ tokenHash: 1 }, { unique: true }),
+      db.collection(VIJETHA_COLLECTIONS.authSessions).createIndex({ expiresAt: 1 }, { expireAfterSeconds: 0 }),
+      db.collection(VIJETHA_COLLECTIONS.authAttempts).createIndex({ expiresAt: 1 }, { expireAfterSeconds: 0 })
     ]).catch((error) => {
       indexPromise = null;
       throw error;
@@ -75,12 +74,8 @@ async function ensureIndexes(db) {
 
 export async function getTestingDatabase() {
   requireConfiguration();
-  if (!client) client = new MongoClient(process.env.MONGODB_URI, { maxPoolSize: 10, serverSelectionTimeoutMS: 7000 });
-  if (!database) {
-    await client.connect();
-    database = client.db(databaseName);
-    await ensureIndexes(database);
-  }
+  const database = await getVijethaDatabase();
+  await ensureIndexes(database);
   return database;
 }
 
@@ -118,6 +113,8 @@ function safeUser(user) {
     name: user.name,
     email: user.email,
     role: user.role || 'administrator',
+    status: user.status || 'pending',
+    instituteId: user.instituteId || VIJETHA_INSTITUTE_ID,
     emailVerified: Boolean(user.emailVerifiedAt)
   };
 }
@@ -204,17 +201,17 @@ export async function readJsonBody(request) {
 
 async function ensureLoginAllowed(db, email, request) {
   const key = hashToken(`login:${email}:${clientAddress(request)}`);
-  const attempt = await db.collection('auth_attempts').findOne({ _id: key });
+  const attempt = await db.collection(VIJETHA_COLLECTIONS.authAttempts).findOne({ _id: key });
   if (attempt?.blockedUntil && attempt.blockedUntil > new Date()) throw new AuthError(429, 'LOGIN_RATE_LIMITED', 'Too many login attempts. Try again in 15 minutes.');
   return key;
 }
 
 async function recordLoginFailure(db, key) {
   const now = new Date();
-  const attempt = await db.collection('auth_attempts').findOne({ _id: key });
+  const attempt = await db.collection(VIJETHA_COLLECTIONS.authAttempts).findOne({ _id: key });
   const withinWindow = attempt?.windowStartedAt && now.getTime() - attempt.windowStartedAt.getTime() < loginWindowMs;
   const count = withinWindow ? (attempt.count || 0) + 1 : 1;
-  await db.collection('auth_attempts').updateOne({ _id: key }, { $set: {
+  await db.collection(VIJETHA_COLLECTIONS.authAttempts).updateOne({ _id: key }, { $set: {
     count,
     windowStartedAt: withinWindow ? attempt.windowStartedAt : now,
     blockedUntil: count >= 8 ? new Date(now.getTime() + loginWindowMs) : null,
@@ -225,7 +222,7 @@ async function recordLoginFailure(db, key) {
 async function issueSession(db, user, request) {
   const token = randomBytes(32).toString('base64url');
   const now = new Date();
-  await db.collection('auth_sessions').insertOne({
+  await db.collection(VIJETHA_COLLECTIONS.authSessions).insertOne({
     tokenHash: hashToken(token),
     userId: user._id,
     createdAt: now,
@@ -257,9 +254,9 @@ async function sendOtpEmail(email, code, purpose) {
 
 async function createOtp(db, email, purpose) {
   const now = new Date();
-  const latest = await db.collection('auth_otps').findOne({ email, purpose, createdAt: { $gt: new Date(now.getTime() - 60000) } });
+  const latest = await db.collection(VIJETHA_COLLECTIONS.authOtps).findOne({ email, purpose, createdAt: { $gt: new Date(now.getTime() - 60000) } });
   if (latest) throw new AuthError(429, 'OTP_COOLDOWN', 'Please wait one minute before requesting another code.');
-  const sentLastHour = await db.collection('auth_otps').countDocuments({ email, purpose, createdAt: { $gt: new Date(now.getTime() - 60 * 60 * 1000) } });
+  const sentLastHour = await db.collection(VIJETHA_COLLECTIONS.authOtps).countDocuments({ email, purpose, createdAt: { $gt: new Date(now.getTime() - 60 * 60 * 1000) } });
   if (sentLastHour >= 5) throw new AuthError(429, 'OTP_RATE_LIMITED', 'Too many codes requested. Try again later.');
   const code = String(randomInt(100000, 1000000));
   const otp = {
@@ -271,11 +268,11 @@ async function createOtp(db, email, purpose) {
     expiresAt: new Date(now.getTime() + otpLifetimeMs),
     usedAt: null
   };
-  const result = await db.collection('auth_otps').insertOne(otp);
+  const result = await db.collection(VIJETHA_COLLECTIONS.authOtps).insertOne(otp);
   try {
     await sendOtpEmail(email, code, purpose);
   } catch (error) {
-    await db.collection('auth_otps').deleteOne({ _id: result.insertedId });
+    await db.collection(VIJETHA_COLLECTIONS.authOtps).deleteOne({ _id: result.insertedId });
     throw error;
   }
 }
@@ -288,12 +285,18 @@ export async function registerAccount(input) {
   validateEmail(email);
   validateName(name);
   validatePassword(input.password);
-  const existing = await db.collection('auth_users').findOne({ email });
+  const existing = await db.collection(VIJETHA_COLLECTIONS.authUsers).findOne({ email });
   if (existing?.emailVerifiedAt) throw new AuthError(409, 'ACCOUNT_EXISTS', 'An account already exists for this email. Sign in instead.');
   const now = new Date();
   const passwordHash = await hashPassword(input.password);
-  await db.collection('auth_users').updateOne({ email }, { $set: {
-    name, email, passwordHash, role: existing?.role || 'teacher', status: 'pending', updatedAt: now
+  await db.collection(VIJETHA_COLLECTIONS.authUsers).updateOne({ email }, { $set: {
+    name,
+    email,
+    passwordHash,
+    instituteId: existing?.instituteId || VIJETHA_INSTITUTE_ID,
+    role: existing?.role || 'teacher',
+    status: existing?.status || 'pending',
+    updatedAt: now
   }, $setOnInsert: { createdAt: now, emailVerifiedAt: null } }, { upsert: true });
   await createOtp(db, email, 'verify-email');
   return { email, message: 'A six-digit verification code was sent to your email.' };
@@ -305,7 +308,7 @@ export async function requestOtp(input) {
   const email = normalizeEmail(input.email);
   const purpose = input.purpose === 'reset-password' ? 'reset-password' : 'verify-email';
   validateEmail(email);
-  const user = await db.collection('auth_users').findOne({ email });
+  const user = await db.collection(VIJETHA_COLLECTIONS.authUsers).findOne({ email });
   const eligible = purpose === 'reset-password' ? Boolean(user?.emailVerifiedAt) : Boolean(user && !user.emailVerifiedAt);
   if (eligible) await createOtp(db, email, purpose);
   return { email, message: 'If this account is eligible, a verification code has been sent.' };
@@ -320,28 +323,42 @@ export async function verifyOtpCode(input, request) {
   validateEmail(email);
   if (!/^\d{6}$/.test(code)) throw new AuthError(400, 'INVALID_OTP', 'Enter the six-digit code from your email.');
   const now = new Date();
-  const otp = await db.collection('auth_otps').findOne({ email, purpose, usedAt: null, expiresAt: { $gt: now } }, { sort: { createdAt: -1 } });
+  const otp = await db.collection(VIJETHA_COLLECTIONS.authOtps).findOne({ email, purpose, usedAt: null, expiresAt: { $gt: now } }, { sort: { createdAt: -1 } });
   if (!otp || otp.attemptsLeft <= 0) throw new AuthError(400, 'INVALID_OTP', 'The code is invalid or has expired. Request a new code.');
   const suppliedHash = Buffer.from(hashOtp(email, purpose, code));
   const storedHash = Buffer.from(otp.codeHash);
   if (suppliedHash.length !== storedHash.length || !timingSafeEqual(suppliedHash, storedHash)) {
-    await db.collection('auth_otps').updateOne({ _id: otp._id }, { $inc: { attemptsLeft: -1 } });
+    await db.collection(VIJETHA_COLLECTIONS.authOtps).updateOne({ _id: otp._id }, { $inc: { attemptsLeft: -1 } });
     throw new AuthError(400, 'INVALID_OTP', 'The code is invalid or has expired. Request a new code.');
   }
-  const user = await db.collection('auth_users').findOne({ email });
+  const user = await db.collection(VIJETHA_COLLECTIONS.authUsers).findOne({ email });
   if (!user) throw new AuthError(400, 'INVALID_OTP', 'The code is invalid or has expired. Request a new code.');
   if (purpose === 'reset-password') validatePassword(input.newPassword);
-  await db.collection('auth_otps').updateOne({ _id: otp._id }, { $set: { usedAt: now } });
+  await db.collection(VIJETHA_COLLECTIONS.authOtps).updateOne({ _id: otp._id }, { $set: { usedAt: now } });
   if (purpose === 'reset-password') {
-    await db.collection('auth_users').updateOne({ _id: user._id }, { $set: { passwordHash: await hashPassword(input.newPassword), updatedAt: now }, $inc: { sessionVersion: 1 } });
-    await db.collection('auth_sessions').deleteMany({ userId: user._id });
+    await db.collection(VIJETHA_COLLECTIONS.authUsers).updateOne({ _id: user._id }, { $set: { passwordHash: await hashPassword(input.newPassword), updatedAt: now }, $inc: { sessionVersion: 1 } });
+    await db.collection(VIJETHA_COLLECTIONS.authSessions).deleteMany({ userId: user._id });
   } else {
-    await db.collection('auth_users').updateOne({ _id: user._id }, { $set: { emailVerifiedAt: now, status: 'active', updatedAt: now } });
+    const approvedRole = ['administrator', 'principal'].includes(user.role);
+    const nextStatus = approvedRole || user.status === 'active' ? 'active' : 'pending';
+    await db.collection(VIJETHA_COLLECTIONS.authUsers).updateOne(
+      { _id: user._id },
+      { $set: { emailVerifiedAt: now, status: nextStatus, instituteId: user.instituteId || VIJETHA_INSTITUTE_ID, updatedAt: now } },
+    );
     user.emailVerifiedAt = now;
-    user.status = 'active';
+    user.status = nextStatus;
+    user.instituteId = user.instituteId || VIJETHA_INSTITUTE_ID;
   }
-  await db.collection('auth_otps').deleteMany({ email, purpose });
-  const refreshedUser = purpose === 'reset-password' ? await db.collection('auth_users').findOne({ _id: user._id }) : user;
+  await db.collection(VIJETHA_COLLECTIONS.authOtps).deleteMany({ email, purpose });
+  const refreshedUser = purpose === 'reset-password' ? await db.collection(VIJETHA_COLLECTIONS.authUsers).findOne({ _id: user._id }) : user;
+  if (refreshedUser.status !== 'active') {
+    return {
+      token: null,
+      user: safeUser(refreshedUser),
+      pendingApproval: true,
+      message: 'Email verified. The principal administrator must approve this account before sign-in.',
+    };
+  }
   return issueSession(db, refreshedUser, request);
 }
 
@@ -351,13 +368,23 @@ export async function loginAccount(input, request) {
   const email = normalizeEmail(input.email);
   validateEmail(email);
   const attemptKey = await ensureLoginAllowed(db, email, request);
-  const user = await db.collection('auth_users').findOne({ email });
+  const user = await db.collection(VIJETHA_COLLECTIONS.authUsers).findOne({ email });
+  if (user?.emailVerifiedAt && ['pending', 'suspended'].includes(user.status) && await verifyPassword(input.password, user.passwordHash)) {
+    const pending = user.status === 'pending';
+    throw new AuthError(
+      403,
+      pending ? 'PRINCIPAL_APPROVAL_REQUIRED' : 'ACCOUNT_SUSPENDED',
+      pending
+        ? 'Your email is verified, but the principal administrator has not approved this account yet.'
+        : 'This account has been suspended by the principal administrator.',
+    );
+  }
   const valid = user?.emailVerifiedAt && user.status === 'active' && await verifyPassword(input.password, user.passwordHash);
   if (!valid) {
     await recordLoginFailure(db, attemptKey);
     throw new AuthError(401, 'INVALID_CREDENTIALS', 'Email or password is incorrect, or the email is not verified.');
   }
-  await db.collection('auth_attempts').deleteOne({ _id: attemptKey });
+  await db.collection(VIJETHA_COLLECTIONS.authAttempts).deleteOne({ _id: attemptKey });
   return issueSession(db, user, request);
 }
 
@@ -366,12 +393,19 @@ export async function sessionUser(request) {
   const token = requestSessionToken(request);
   if (!token) return null;
   const db = await getTestingDatabase();
-  const session = await db.collection('auth_sessions').findOne({ tokenHash: hashToken(token), expiresAt: { $gt: new Date() } });
+  const session = await db.collection(VIJETHA_COLLECTIONS.authSessions).findOne({ tokenHash: hashToken(token), expiresAt: { $gt: new Date() } });
   if (!session) return null;
-  const user = await db.collection('auth_users').findOne({ _id: session.userId, status: 'active', emailVerifiedAt: { $ne: null } });
+  const user = await db.collection(VIJETHA_COLLECTIONS.authUsers).findOne({ _id: session.userId, status: 'active', emailVerifiedAt: { $ne: null } });
   if (!user) return null;
-  await db.collection('auth_sessions').updateOne({ _id: session._id }, { $set: { lastSeenAt: new Date() } });
+  const now = new Date();
+  if (!session.lastSeenAt || now.getTime() - session.lastSeenAt.getTime() > 5 * 60 * 1000) {
+    await db.collection(VIJETHA_COLLECTIONS.authSessions).updateOne({ _id: session._id }, { $set: { lastSeenAt: now } });
+  }
   return safeUser(user);
+}
+
+export function instituteIdForUser(user) {
+  return String(user?.instituteId || VIJETHA_INSTITUTE_ID);
 }
 
 export async function logoutAccount(request) {
@@ -379,7 +413,7 @@ export async function logoutAccount(request) {
   const token = requestSessionToken(request);
   if (!token) return;
   const db = await getTestingDatabase();
-  await db.collection('auth_sessions').deleteOne({ tokenHash: hashToken(token) });
+  await db.collection(VIJETHA_COLLECTIONS.authSessions).deleteOne({ tokenHash: hashToken(token) });
 }
 
 export function sendAuthError(response, error) {

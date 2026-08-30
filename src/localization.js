@@ -526,6 +526,16 @@ const SUBJECTS = {
 
 const EXACT_TEXT = {
   hi: {
+    "Pattern Completion": "पैटर्न पूर्णता",
+    "Number Patterns": "संख्या पैटर्न",
+    "Alphabet Patterns": "वर्णमाला पैटर्न",
+    "Figure Patterns": "आकृति पैटर्न",
+    "Mixed Visual Patterns": "मिश्रित दृश्य पैटर्न",
+    "Figure Series Completion": "आकृति श्रृंखला पूर्णता",
+    "Geometrical Figure Completion": "ज्यामितीय आकृति पूर्णता",
+    "Mirror Imaging": "दर्पण प्रतिबिंब",
+    "Water Imaging": "जल प्रतिबिंब",
+    "Embedded Figures": "अंतर्निहित आकृतियाँ",
     "Select the number that completes the pattern.": "पैटर्न पूरा करने वाली संख्या चुनिए।",
     "Select the letter that completes the alphabetical pattern.": "वर्णमाला पैटर्न पूरा करने वाला अक्षर चुनिए।",
     "Choose the figure that completes the increasing visual pattern.": "बढ़ते हुए दृश्य पैटर्न को पूरा करने वाली आकृति चुनिए।",
@@ -542,8 +552,82 @@ const EXACT_TEXT = {
     Condensation: "संघनन", Evaporation: "वाष्पीकरण", Protein: "प्रोटीन", Cotton: "कपास", Rice: "चावल", Plain: "मैदान", Mountain: "पर्वत", Valley: "घाटी", Island: "द्वीप",
     "solar energy": "सौर ऊर्जा", coal: "कोयला", petrol: "पेट्रोल", diesel: "डीज़ल", thermometer: "थर्मामीटर", seismograph: "भूकंपलेखी", "terrace farming": "सीढ़ीदार खेती",
     "planting trees": "पेड़ लगाना", "official government website": "आधिकारिक सरकारी वेबसाइट", drying: "सुखाना", evaporation: "वाष्पीकरण", heart: "हृदय",
+    "Correct two-rule continuation": "दोनों नियमों का सही क्रम",
+    "Incorrect outline": "गलत बाहरी आकृति",
+    "Incorrect mark count": "चिह्नों की गलत संख्या",
+    "Incorrect rotation": "गलत घुमाव",
+    "Left arrow; dot on right": "बायाँ तीर; दाईं ओर बिंदु",
+    "Right arrow; dot on right": "दायाँ तीर; दाईं ओर बिंदु",
+    "Left arrow; dot on left": "बायाँ तीर; बाईं ओर बिंदु",
+    "Down arrow; dot above": "नीचे का तीर; ऊपर बिंदु",
+    "Down arrow; dots above": "नीचे का तीर; ऊपर बिंदु",
+    "Up arrow; dots above": "ऊपर का तीर; ऊपर बिंदु",
+    "Left arrow; dots below": "बायाँ तीर; नीचे बिंदु",
+    "Down arrow; dots below": "नीचे का तीर; नीचे बिंदु",
+    "The outline follows the same four-shape cycle while one internal mark is added at each step.": "बाहरी आकृति चार आकृतियों के एक ही चक्र का अनुसरण करती है और हर चरण में एक अंदरूनी चिह्न जुड़ता है।",
+    "One mark is added to the figure at every step.": "हर चरण में आकृति में एक चिह्न जोड़ा जाता है।",
+    "A vertical mirror reverses left and right but does not reverse top and bottom.": "ऊर्ध्वाधर दर्पण बाएँ और दाएँ को उलटता है, लेकिन ऊपर और नीचे को नहीं।",
+    "A water image reverses top and bottom while left and right remain unchanged.": "जल प्रतिबिंब ऊपर और नीचे को उलटता है, जबकि बाएँ और दाएँ अपरिवर्तित रहते हैं।",
+    "Temperature falls with altitude": "ऊँचाई बढ़ने पर तापमान घटता है", "Mountains create cold air": "पर्वत ठंडी हवा बनाते हैं", "Rocks absorb every sunray": "चट्टानें सूर्य की हर किरण सोखती हैं", "Rivers cool all mountains": "नदियाँ सभी पर्वतों को ठंडा करती हैं",
+    "A house on stilts": "खंभों पर बना घर", "A deep basement house": "गहरे तहखाने वाला घर", "A tent in a riverbed": "नदी तल में तंबू", "A house without drainage": "जल निकासी रहित घर",
+    "Treat waste before discharge": "छोड़ने से पहले अपशिष्ट का उपचार", "Dump plastic waste": "प्लास्टिक कचरा फेंकना", "Wash vehicles in the river": "नदी में वाहन धोना", "Burn waste on the bank": "किनारे पर कचरा जलाना",
+    "One-horned rhinoceros": "एक सींग वाला गैंडा", "Indian peacock": "भारतीय मोर",
+    "Drop, cover and hold": "झुकें, ढकें और पकड़कर रहें", "Use a lift": "लिफ्ट का उपयोग करें", "Stand beside glass windows": "काँच की खिड़कियों के पास खड़े हों", "Run onto a balcony": "बालकनी की ओर दौड़ें",
+    "Wash hands with soap": "साबुन से हाथ धोएँ", "Share an unwashed towel": "बिना धुला तौलिया साझा करें", "Leave food uncovered": "भोजन खुला छोड़ें", "Touch the face repeatedly": "बार-बार चेहरा छुएँ",
+    "They provide food and shelter": "वे भोजन और आश्रय देते हैं", "They stop every rainfall": "वे हर वर्षा रोकते हैं", "They prevent plant growth": "वे पौधों की वृद्धि रोकते हैं", "They make fresh water salty": "वे मीठे पानी को खारा बनाते हैं",
+    "Repair a leaking tap": "टपकता नल ठीक करें", "Repairing a leaking tap": "टपकते नल की मरम्मत", "Let a tank overflow": "टंकी को बहने दें", "Keep the tap running while brushing": "ब्रश करते समय नल खुला रखें", "Wash one utensil at a time under running water": "बहते पानी में एक-एक बर्तन धोएँ",
+    "They hold soil particles together": "वे मिट्टी के कणों को बाँधकर रखते हैं", "They remove every mineral": "वे सभी खनिज निकाल देते हैं", "They turn soil into rock": "वे मिट्टी को चट्टान बना देते हैं", "They stop all water entering soil": "वे पानी को मिट्टी में जाने से पूरी तरह रोकते हैं",
+    "Releasing untreated sewage": "बिना उपचार का सीवेज छोड़ना", "Harvesting rainwater": "वर्षाजल संचयन", "Planting trees": "पेड़ लगाना",
+    "number of players in a cricket team on the field": "मैदान पर क्रिकेट टीम में खिलाड़ियों की संख्या", "document that lays down the fundamental law of India": "भारत का मूल कानून निर्धारित करने वाला दस्तावेज़",
+    "Constitution of India": "भारत का संविधान", "school diary": "विद्यालय डायरी", "railway timetable": "रेल समय-सारणी", "weather chart": "मौसम चार्ट",
+    "an anonymous forward": "अज्ञात स्रोत का संदेश", "an unsigned poster": "बिना हस्ताक्षर का पोस्टर", "an unverified rumour": "असत्यापित अफवाह",
+    "classical dance form from Tamil Nadu": "तमिलनाडु का शास्त्रीय नृत्य रूप",
+    "Indian national animal": "भारत का राष्ट्रीय पशु",
+    "instrument used to record earthquake waves": "भूकंप तरंगों को दर्ज करने वाला यंत्र",
+    "irrigation method that saves water by delivering it near roots": "जड़ों के पास पानी पहुँचाकर जल बचाने वाली सिंचाई विधि",
+    "safe step that reduces water-borne infection risk": "जलजनित संक्रमण का जोखिम घटाने वाला सुरक्षित उपाय",
+    "condition needed by most seeds for germination": "अधिकांश बीजों के अंकुरण के लिए आवश्यक परिस्थिति",
+    "practice that helps conserve a forest": "वन संरक्षण में सहायक कार्य",
+    "water air and warmth": "पानी, हवा और गर्मी", "bright light only": "केवल तेज़ प्रकाश", "sand only": "केवल रेत", "paint and salt": "रंग और नमक",
+    "drinking from any puddle": "किसी भी गड्ढे का पानी पीना", "boiling drinking water": "पीने का पानी उबालना", "leaving water uncovered": "पानी खुला छोड़ना", "mixing waste into water": "पानी में कचरा मिलाना",
+    "burning dry leaves widely": "सूखे पत्ते बड़े पैमाने पर जलाना", "removing all young plants": "सभी छोटे पौधे हटाना", "dumping plastic waste": "प्लास्टिक कचरा फेंकना", "planting native trees": "स्थानीय पेड़ लगाना",
+    "canal overflow": "नहर का अतिप्रवाह", "open spraying all day": "दिनभर खुला छिड़काव", "flood irrigation": "बाढ़ सिंचाई", "drip irrigation": "टपक सिंचाई",
+    Books: "पुस्तकें", Plants: "पौधे", Models: "मॉडल", "All are equal": "सभी बराबर हैं", Kites: "पतंगें", Boats: "नावें", Trees: "पेड़",
+    minutes: "मिनट", north: "उत्तर", south: "दक्षिण", east: "पूर्व", west: "पश्चिम",
+    boats: "नावें", "Pasteurisation": "पाश्चुरीकरण", "Burn fallen leaves": "गिरे हुए पत्ते जलाना", "Keep engines idling": "इंजन चालू छोड़ना", "Use public transport": "सार्वजनिक परिवहन का उपयोग करना",
+    Kidneys: "गुर्दे", Stomach: "पेट", Brain: "मस्तिष्क", Bones: "हड्डियाँ", Intestines: "आँतें", kidney: "गुर्दा", lungs: "फेफड़े", stomach: "पेट",
+    "Arjuna Award": "अर्जुन पुरस्कार", "Dronacharya Award": "द्रोणाचार्य पुरस्कार", "Major Dhyan Chand Khel Ratna": "मेजर ध्यानचंद खेल रत्न", "Sahitya Akademi Award": "साहित्य अकादमी पुरस्कार",
+    "Territorial Army": "प्रादेशिक सेना", "factory farming": "कारखाना खेती", "deep-sea farming": "गहरे समुद्र की खेती", "drift farming": "स्थानांतरण खेती",
+    peeling: "छीलना", soaking: "भिगोना", rinsing: "धोना", compass: "दिशासूचक", barometer: "वायुदाबमापी", telescope: "दूरबीन",
+    Pasteurisation: "पाश्चुरीकरण", precipitation: "वर्षण", condensation: "संघनन", freezing: "जमना", "rain gauge": "वर्षामापी", "wind vane": "पवनदर्शक",
+    "lion-tailed macaque": "सिंह-पूँछ मकाक", "snow leopard": "हिम तेंदुआ", "plastic waste": "प्लास्टिक कचरा",
+    Bicycle: "साइकिल", Boat: "नाव", Train: "रेलगाड़ी", Aeroplane: "विमान", Germination: "अंकुरण", Pollination: "परागण", Sedimentation: "अवसादन",
+    Bajra: "बाजरा", Gram: "चना", Mustard: "सरसों", Collection: "संग्रह", Infiltration: "अंतःस्रवण", Water: "पानी", Mineral: "खनिज", salt: "नमक",
+    Roughage: "आहार रेशा", Nylon: "नायलॉन", Polyester: "पॉलिएस्टर", Acrylic: "एक्रिलिक", Spring: "वसंत", Autumn: "पतझड़", Winter: "शीत ऋतु",
+    "Burn plastic waste": "प्लास्टिक कचरा जलाना", "Mineral salt": "खनिज लवण",
+    village: "गाँव", school: "विद्यालय", neighbourhood: "पड़ोस", "hill town": "पहाड़ी नगर", library: "पुस्तकालय", museum: "संग्रहालय", garden: "बगीचा", classroom: "कक्षा", playground: "खेल का मैदान", laboratory: "प्रयोगशाला", auditorium: "सभागार", "art room": "कला कक्ष", "assembly hall": "सभा कक्ष", "computer room": "कंप्यूटर कक्ष", "music room": "संगीत कक्ष", "reading room": "वाचन कक्ष", "sports field": "खेल मैदान", "science centre": "विज्ञान केंद्र", "school office": "विद्यालय कार्यालय", "training ground": "प्रशिक्षण मैदान", workshop: "कार्यशाला", "exhibition hall": "प्रदर्शनी कक्ष", "nature club": "प्रकृति क्लब", "language lab": "भाषा प्रयोगशाला",
+    "labelled notebooks": "लेबल लगी कॉपियाँ", "science cards": "विज्ञान कार्ड", "history folders": "इतिहास फोल्डर", "reading journals": "पठन पत्रिकाएँ", "art sheets": "कला पत्रक", "seed packets": "बीज के पैकेट", "map cards": "मानचित्र कार्ड", "number tiles": "संख्या टाइलें",
+    "activity register": "गतिविधि रजिस्टर", "attendance sheet": "उपस्थिति पत्रक", "reading diary": "पठन डायरी", "science checklist": "विज्ञान जाँच-सूची", "sports record": "खेल अभिलेख", "project calendar": "परियोजना कैलेंडर", "library log": "पुस्तकालय अभिलेख", "practice notebook": "अभ्यास पुस्तिका",
+    umbrella: "छाता", "orange folder": "नारंगी फोल्डर", hourglass: "रेतघड़ी", atlas: "मानचित्र-पुस्तक", "ink bottle": "स्याही की बोतल", uniform: "वर्दी", book: "पुस्तक", map: "मानचित्र", pencil: "पेंसिल", "useful chart": "उपयोगी चार्ट",
+    a: "ए", an: "ऐन", "the only": "केवल द", "no article": "कोई उपपद नहीं", on: "पर", into: "अंदर", among: "के बीच", during: "के दौरान",
+    check: "जाँच करना", checks: "जाँचता है", checking: "जाँच रहा है", "have check": "जाँच की है",
+    necessary: "आवश्यक", neccessary: "आवशयक", necesary: "आवश्यकक", necessery: "आवशेक", beautiful: "सुंदर", beutiful: "सुनदर", beautifull: "सुन्ददर", beauteful: "सोंदर", separate: "अलग", seperate: "अलग्ग", separrate: "अललग", separete: "अलगक", knowledge: "ज्ञान", knowlege: "ग्यान", knowladge: "ज्ञन", knowledje: "ज्ञान्न",
+    rapid: "तेज़", quick: "शीघ्र", silent: "मौन", rough: "खुरदरा", late: "देर", assist: "सहायता करना", help: "मदद", refuse: "मना करना", hide: "छिपाना", delay: "विलंब", observe: "देखना", notice: "ध्यान देना", forget: "भूलना", damage: "क्षति पहुँचाना", avoid: "बचना", ancient: "प्राचीन", modern: "आधुनिक", old: "पुराना", historic: "ऐतिहासिक", aged: "वृद्ध", expand: "फैलाना", contract: "सिकोड़ना", extend: "विस्तार करना", increase: "बढ़ाना", enlarge: "बड़ा करना", brave: "बहादुर", cowardly: "कायर", bold: "निडर", fearless: "निर्भय", valiant: "वीर",
+    "isn't it": "है न", "doesn't it": "नहीं करता है", "wasn't it": "था न", "is it": "क्या है", Hurray: "वाह", Because: "क्योंकि", Under: "नीचे", Slowly: "धीरे", bright: "चमकीला", carried: "ले गया", carefully: "सावधानी से", careful: "सावधान", care: "देखभाल", carefulness: "सावधानी", flock: "झुंड", bundle: "गठरी", fleet: "बेड़ा", pack: "समूह", I: "मैं", visit: "जाऊँगा", visited: "गया", Monday: "सोमवार",
+    light: "रात", left: "कल", lot: "घर", niece: "भतीजी", nephew: "भतीजा", aunt: "चाची", sister: "बहन", daughter: "बेटी", leaf: "पत्ता", leaves: "पत्ते", knife: "चाकू", knives: "चाकू", shelf: "अलमारी", shelves: "अलमारियाँ", child: "बच्चा", children: "बच्चे", woman: "महिला", women: "महिलाएँ",
+    "The answer is stated directly in the passage.": "उत्तर अनुच्छेद में सीधे दिया गया है।", "Reading Comprehension": "पठन-बोध", "Comprehension Passage": "बोध अनुच्छेद", "Articles and Prepositions": "उपपद और संबंधबोधक", "Verbs and Tenses": "क्रियाएँ और काल", "Correct Spelling": "शुद्ध वर्तनी", "Sentence Formation": "वाक्य निर्माण", "Types of Sentence": "वाक्य के प्रकार", "Ordering of Words": "शब्द क्रम", Vocabulary: "शब्दावली", Synonyms: "पर्यायवाची", "Synonyms and Antonyms": "पर्यायवाची और विलोम", "Confusing Words": "भ्रमित करने वाले शब्द", "Idioms and Phrases": "मुहावरे और वाक्यांश", "Question Tags": "प्रश्न-पुच्छ", Interjection: "विस्मयादिबोधक", Adjectives: "विशेषण", Adverbs: "क्रियाविशेषण", "Adjectives and Adverbs": "विशेषण और क्रियाविशेषण", Pronouns: "सर्वनाम", "Kinds of Nouns": "संज्ञा के प्रकार", "Collective Nouns": "समूहवाचक संज्ञा", "Rhyming Words": "तुकांत शब्द", Gender: "लिंग", "Singular and Plural": "एकवचन और बहुवचन", Preposition: "संबंधबोधक", "Verbs and Type": "क्रिया और उसके प्रकार",
   },
   te: {
+    "Pattern Completion": "నమూనా పూర్తి",
+    "Number Patterns": "సంఖ్యా నమూనాలు",
+    "Alphabet Patterns": "అక్షర నమూనాలు",
+    "Figure Patterns": "ఆకార నమూనాలు",
+    "Mixed Visual Patterns": "మిశ్రమ దృశ్య నమూనాలు",
+    "Figure Series Completion": "ఆకార శ్రేణి పూర్తి",
+    "Geometrical Figure Completion": "రేఖాగణిత ఆకార పూర్తి",
+    "Mirror Imaging": "అద్దం ప్రతిబింబం",
+    "Water Imaging": "నీటి ప్రతిబింబం",
+    "Embedded Figures": "దాగి ఉన్న ఆకారాలు",
     "Select the number that completes the pattern.": "నమూనాను పూర్తి చేసే సంఖ్యను ఎంచుకోండి.",
     "Select the letter that completes the alphabetical pattern.": "అక్షర క్రమ నమూనాను పూర్తి చేసే అక్షరాన్ని ఎంచుకోండి.",
     "Choose the figure that completes the increasing visual pattern.": "పెరుగుతున్న దృశ్య నమూనాను పూర్తి చేసే ఆకారాన్ని ఎంచుకోండి.",
@@ -560,11 +644,168 @@ const EXACT_TEXT = {
     Condensation: "సాంద్రీకరణ", Evaporation: "ఆవిరీకరణ", Protein: "ప్రోటీన్", Cotton: "పత్తి", Rice: "వరి", Plain: "మైదానం", Mountain: "పర్వతం", Valley: "లోయ", Island: "ద్వీపం",
     "solar energy": "సౌర శక్తి", coal: "బొగ్గు", petrol: "పెట్రోలు", diesel: "డీజిల్", thermometer: "థర్మామీటర్", seismograph: "భూకంపలేఖిని", "terrace farming": "మెట్ల సాగు",
     "planting trees": "చెట్లు నాటడం", "official government website": "అధికారిక ప్రభుత్వ వెబ్‌సైట్", drying: "ఎండబెట్టడం", evaporation: "ఆవిరీకరణ", heart: "గుండె",
+    "Correct two-rule continuation": "రెండు నియమాల సరైన కొనసాగింపు",
+    "Incorrect outline": "తప్పు బయటి ఆకారం",
+    "Incorrect mark count": "గుర్తుల తప్పు సంఖ్య",
+    "Incorrect rotation": "తప్పు భ్రమణం",
+    "Left arrow; dot on right": "ఎడమ బాణం; కుడివైపు చుక్క",
+    "Right arrow; dot on right": "కుడి బాణం; కుడివైపు చుక్క",
+    "Left arrow; dot on left": "ఎడమ బాణం; ఎడమవైపు చుక్క",
+    "Down arrow; dot above": "కిందికి బాణం; పైన చుక్క",
+    "Down arrow; dots above": "కిందికి బాణం; పైన చుక్కలు",
+    "Up arrow; dots above": "పైకి బాణం; పైన చుక్కలు",
+    "Left arrow; dots below": "ఎడమ బాణం; కింద చుక్కలు",
+    "Down arrow; dots below": "కిందికి బాణం; కింద చుక్కలు",
+    "The outline follows the same four-shape cycle while one internal mark is added at each step.": "బయటి ఆకారం అదే నాలుగు ఆకారాల చక్రాన్ని అనుసరిస్తుంది; ప్రతి దశలో ఒక లోపలి గుర్తు చేరుతుంది.",
+    "One mark is added to the figure at every step.": "ప్రతి దశలో ఆకారానికి ఒక గుర్తు చేరుతుంది.",
+    "A vertical mirror reverses left and right but does not reverse top and bottom.": "నిలువు అద్దం ఎడమ, కుడి వైపులను మారుస్తుంది; పై, కింది వైపులను మార్చదు.",
+    "A water image reverses top and bottom while left and right remain unchanged.": "నీటి ప్రతిబింబం పై, కింది వైపులను మారుస్తుంది; ఎడమ, కుడి వైపులు మారవు.",
+    "Temperature falls with altitude": "ఎత్తు పెరిగే కొద్దీ ఉష్ణోగ్రత తగ్గుతుంది", "Mountains create cold air": "పర్వతాలు చల్లని గాలిని సృష్టిస్తాయి", "Rocks absorb every sunray": "రాళ్లు ప్రతి సూర్యకిరణాన్ని గ్రహిస్తాయి", "Rivers cool all mountains": "నదులు అన్ని పర్వతాలను చల్లబరుస్తాయి",
+    "A house on stilts": "స్తంభాలపై నిర్మించిన ఇల్లు", "A deep basement house": "లోతైన నేలమాళిగ ఉన్న ఇల్లు", "A tent in a riverbed": "నదీగర్భంలో గుడారం", "A house without drainage": "మురుగు కాలువ లేని ఇల్లు",
+    "Treat waste before discharge": "విడుదల చేసే ముందు వ్యర్థాలను శుద్ధి చేయడం", "Dump plastic waste": "ప్లాస్టిక్ వ్యర్థాలు వేయడం", "Wash vehicles in the river": "నదిలో వాహనాలు కడగడం", "Burn waste on the bank": "ఒడ్డున వ్యర్థాలు కాల్చడం",
+    "One-horned rhinoceros": "ఒక కొమ్ము ఖడ్గమృగం", "Indian peacock": "భారత నెమలి",
+    "Drop, cover and hold": "కిందకు వంగి, తల దాచుకొని, పట్టుకొని ఉండడం", "Use a lift": "లిఫ్ట్ ఉపయోగించడం", "Stand beside glass windows": "గాజు కిటికీల పక్కన నిలబడడం", "Run onto a balcony": "బాల్కనీకి పరుగెత్తడం",
+    "Wash hands with soap": "సబ్బుతో చేతులు కడగడం", "Share an unwashed towel": "ఉతకని తువ్వాలు పంచుకోవడం", "Leave food uncovered": "ఆహారాన్ని మూత లేకుండా ఉంచడం", "Touch the face repeatedly": "ముఖాన్ని పదేపదే తాకడం",
+    "They provide food and shelter": "అవి ఆహారం, ఆశ్రయం అందిస్తాయి", "They stop every rainfall": "అవి ప్రతి వర్షాన్ని ఆపుతాయి", "They prevent plant growth": "అవి మొక్కల పెరుగుదలను అడ్డుకుంటాయి", "They make fresh water salty": "అవి మంచినీటిని ఉప్పగా మారుస్తాయి",
+    "Repair a leaking tap": "లీకవుతున్న కుళాయిని బాగుచేయడం", "Repairing a leaking tap": "లీకవుతున్న కుళాయి మరమ్మతు", "Let a tank overflow": "ట్యాంకు పొంగనివ్వడం", "Keep the tap running while brushing": "పళ్లు తోమేటప్పుడు కుళాయి తెరిచి ఉంచడం", "Wash one utensil at a time under running water": "పారే నీటిలో ఒక్కో పాత్రను కడగడం",
+    "They hold soil particles together": "అవి మట్టి కణాలను కలిపి ఉంచుతాయి", "They remove every mineral": "అవి ప్రతి ఖనిజాన్ని తొలగిస్తాయి", "They turn soil into rock": "అవి మట్టిని రాయిగా మారుస్తాయి", "They stop all water entering soil": "అవి నీరు నేలలోకి వెళ్లకుండా పూర్తిగా ఆపుతాయి",
+    "Releasing untreated sewage": "శుద్ధి చేయని మురుగునీటిని విడుదల చేయడం", "Harvesting rainwater": "వర్షపు నీటి సంరక్షణ", "Planting trees": "చెట్లు నాటడం",
+    "number of players in a cricket team on the field": "మైదానంలో క్రికెట్ జట్టులోని ఆటగాళ్ల సంఖ్య", "document that lays down the fundamental law of India": "భారతదేశ ప్రాథమిక చట్టాన్ని నిర్దేశించే పత్రం",
+    "Constitution of India": "భారత రాజ్యాంగం", "school diary": "పాఠశాల డైరీ", "railway timetable": "రైల్వే సమయ పట్టిక", "weather chart": "వాతావరణ పట్టిక",
+    "an anonymous forward": "తెలియని మూలం నుంచి వచ్చిన సందేశం", "an unsigned poster": "సంతకం లేని పోస్టర్", "an unverified rumour": "ధృవీకరించని వదంతి",
+    "classical dance form from Tamil Nadu": "తమిళనాడుకు చెందిన శాస్త్రీయ నృత్య రూపం",
+    "Indian national animal": "భారత జాతీయ జంతువు",
+    "instrument used to record earthquake waves": "భూకంప తరంగాలను నమోదు చేసే పరికరం",
+    "irrigation method that saves water by delivering it near roots": "వేర్ల దగ్గర నీటిని అందించి నీటిని ఆదా చేసే సాగునీటి పద్ధతి",
+    "safe step that reduces water-borne infection risk": "నీటి ద్వారా వచ్చే సంక్రమణ ప్రమాదాన్ని తగ్గించే సురక్షిత చర్య",
+    "condition needed by most seeds for germination": "చాలా విత్తనాలు మొలకెత్తడానికి అవసరమైన పరిస్థితి",
+    "practice that helps conserve a forest": "అడవిని సంరక్షించడానికి సహాయపడే చర్య",
+    "water air and warmth": "నీరు, గాలి, వెచ్చదనం", "bright light only": "ప్రకాశవంతమైన వెలుగు మాత్రమే", "sand only": "ఇసుక మాత్రమే", "paint and salt": "రంగు, ఉప్పు",
+    "drinking from any puddle": "ఏ గుంటలోని నీరైనా తాగడం", "boiling drinking water": "తాగునీటిని మరిగించడం", "leaving water uncovered": "నీటిని మూత లేకుండా ఉంచడం", "mixing waste into water": "నీటిలో వ్యర్థాలను కలపడం",
+    "burning dry leaves widely": "ఎండిన ఆకులను విస్తృతంగా కాల్చడం", "removing all young plants": "అన్ని చిన్న మొక్కలను తొలగించడం", "dumping plastic waste": "ప్లాస్టిక్ వ్యర్థాలను వేయడం", "planting native trees": "స్థానిక చెట్లను నాటడం",
+    "canal overflow": "కాలువ పొంగిపోవడం", "open spraying all day": "రోజంతా బహిరంగంగా నీరు చల్లడం", "flood irrigation": "ముంపు సాగునీరు", "drip irrigation": "బిందు సేద్యం",
+    Books: "పుస్తకాలు", Plants: "మొక్కలు", Models: "నమూనాలు", "All are equal": "అన్నీ సమానం", Kites: "గాలిపటాలు", Boats: "పడవలు", Trees: "చెట్లు",
+    minutes: "నిమిషాలు", north: "ఉత్తరం", south: "దక్షిణం", east: "తూర్పు", west: "పడమర",
+    boats: "పడవలు", "Pasteurisation": "పాశ్చరైజేషన్", "Burn fallen leaves": "రాలిన ఆకులను కాల్చడం", "Keep engines idling": "ఇంజిన్లను ఆన్‌లో ఉంచడం", "Use public transport": "ప్రజా రవాణాను ఉపయోగించడం",
+    Kidneys: "మూత్రపిండాలు", Stomach: "కడుపు", Brain: "మెదడు", Bones: "ఎముకలు", Intestines: "పేగులు", kidney: "మూత్రపిండం", lungs: "ఊపిరితిత్తులు", stomach: "కడుపు",
+    "Arjuna Award": "అర్జున పురస్కారం", "Dronacharya Award": "ద్రోణాచార్య పురస్కారం", "Major Dhyan Chand Khel Ratna": "మేజర్ ధ్యాన్‌చంద్ ఖేల్ రత్న", "Sahitya Akademi Award": "సాహిత్య అకాడమీ పురస్కారం",
+    "Territorial Army": "ప్రాదేశిక సైన్యం", "factory farming": "కర్మాగార సాగు", "deep-sea farming": "లోతు సముద్ర సాగు", "drift farming": "స్థానాంతర సాగు",
+    peeling: "తొక్క తీయడం", soaking: "నానబెట్టడం", rinsing: "కడగడం", compass: "దిక్సూచి", barometer: "వాయుభారమాపకం", telescope: "దూరదర్శిని",
+    Pasteurisation: "పాశ్చరైజేషన్", precipitation: "అవపాతం", condensation: "సాంద్రీకరణ", freezing: "గడ్డకట్టడం", "rain gauge": "వర్షమాపకం", "wind vane": "గాలిదిశ సూచిక",
+    "lion-tailed macaque": "సింహపు తోక కోతి", "snow leopard": "మంచు చిరుత", "plastic waste": "ప్లాస్టిక్ వ్యర్థాలు",
+    Bicycle: "సైకిల్", Boat: "పడవ", Train: "రైలు", Aeroplane: "విమానం", Germination: "మొలకెత్తడం", Pollination: "పరాగసంపర్కం", Sedimentation: "అవక్షేపణ",
+    Bajra: "సజ్జలు", Gram: "శనగ", Mustard: "ఆవాలు", Collection: "సేకరణ", Infiltration: "భూమిలోకి ఇంకడం", Water: "నీరు", Mineral: "ఖనిజం", salt: "ఉప్పు",
+    Roughage: "పీచుపదార్థం", Nylon: "నైలాన్", Polyester: "పాలియెస్టర్", Acrylic: "అక్రిలిక్", Spring: "వసంతం", Autumn: "శరదృతువు", Winter: "శీతాకాలం",
+    "Burn plastic waste": "ప్లాస్టిక్ వ్యర్థాలను కాల్చడం", "Mineral salt": "ఖనిజ లవణం",
+    village: "గ్రామం", school: "పాఠశాల", neighbourhood: "పరిసర ప్రాంతం", "hill town": "కొండ పట్టణం", library: "గ్రంథాలయం", museum: "ప్రదర్శనశాల", garden: "తోట", classroom: "తరగతి గది", playground: "ఆట మైదానం", laboratory: "ప్రయోగశాల", auditorium: "సభామందిరం", "art room": "కళా గది", "assembly hall": "సభా మందిరం", "computer room": "కంప్యూటర్ గది", "music room": "సంగీత గది", "reading room": "పఠన గది", "sports field": "క్రీడా మైదానం", "science centre": "విజ్ఞాన కేంద్రం", "school office": "పాఠశాల కార్యాలయం", "training ground": "శిక్షణ మైదానం", workshop: "కార్యశాల", "exhibition hall": "ప్రదర్శన మందిరం", "nature club": "ప్రకృతి క్లబ్", "language lab": "భాషా ప్రయోగశాల",
+    "labelled notebooks": "లేబుల్ ఉన్న నోట్‌బుక్లు", "science cards": "విజ్ఞాన కార్డులు", "history folders": "చరిత్ర ఫోల్డర్లు", "reading journals": "పఠన పత్రికలు", "art sheets": "కళా పత్రాలు", "seed packets": "విత్తన పొట్లాలు", "map cards": "పట కార్డులు", "number tiles": "సంఖ్య పలకలు",
+    "activity register": "కార్యకలాపాల రిజిస్టర్", "attendance sheet": "హాజరు పత్రం", "reading diary": "పఠన డైరీ", "science checklist": "విజ్ఞాన తనిఖీ జాబితా", "sports record": "క్రీడా రికార్డు", "project calendar": "ప్రాజెక్టు క్యాలెండర్", "library log": "గ్రంథాలయ నమోదు", "practice notebook": "అభ్యాస పుస్తకం",
+    umbrella: "గొడుగు", "orange folder": "నారింజ రంగు ఫోల్డర్", hourglass: "ఇసుక గడియారం", atlas: "పటాల పుస్తకం", "ink bottle": "సిరా సీసా", uniform: "యూనిఫాం", book: "పుస్తకం", map: "పటం", pencil: "పెన్సిల్", "useful chart": "ఉపయోగకరమైన పటం",
+    a: "ఎ", an: "యాన్", "the only": "ద మాత్రమే", "no article": "ఉపపదం లేదు", on: "పై", into: "లోపలికి", among: "మధ్య", during: "సమయంలో",
+    check: "తనిఖీ చేయడం", checks: "తనిఖీ చేస్తాడు", checking: "తనిఖీ చేస్తున్నాడు", "have check": "తనిఖీ చేశారు",
+    necessary: "అవసరమైన", neccessary: "అవసరమయిన", necesary: "అవసరమైనన", necessery: "అవసరమిన", beautiful: "అందమైన", beutiful: "అందమయినన", beautifull: "అందమైనా", beauteful: "అందమయిన", separate: "వేరు", seperate: "వేరూ", separrate: "వెరు", separete: "వేరున", knowledge: "జ్ఞానం", knowlege: "జానం", knowladge: "జ్ఞనము", knowledje: "జ్ఞానముు",
+    rapid: "వేగమైన", quick: "త్వరిత", silent: "నిశ్శబ్ద", rough: "గరుకు", late: "ఆలస్యం", assist: "సహాయం చేయడం", help: "సహాయం", refuse: "నిరాకరించడం", hide: "దాచడం", delay: "ఆలస్యం", observe: "గమనించడం", notice: "గుర్తించడం", forget: "మరచిపోవడం", damage: "నష్టం చేయడం", avoid: "తప్పించుకోవడం", ancient: "ప్రాచీన", modern: "ఆధునిక", old: "పాత", historic: "చారిత్రక", aged: "వృద్ధ", expand: "విస్తరించడం", contract: "కుదించడం", extend: "పొడిగించడం", increase: "పెంచడం", enlarge: "పెద్దదిగా చేయడం", brave: "ధైర్యవంతుడు", cowardly: "పిరికివాడు", bold: "నిర్భయ", fearless: "భయంలేని", valiant: "సాహసవంతుడు",
+    "isn't it": "కదా", "doesn't it": "చేయదా", "wasn't it": "కాదా", "is it": "అవునా", Hurray: "ఆహా", Because: "ఎందుకంటే", Under: "కింద", Slowly: "నెమ్మదిగా", bright: "ప్రకాశవంతమైన", carried: "తీసుకెళ్లాడు", carefully: "జాగ్రత్తగా", careful: "జాగ్రత్త", care: "శ్రద్ధ", carefulness: "జాగ్రత్తతనం", flock: "పక్షుల గుంపు", bundle: "కట్ట", fleet: "నౌకాదళం", pack: "సమూహం", I: "నేను", visit: "వెళ్తాను", visited: "వెళ్లాడు", Monday: "సోమవారం",
+    light: "కలం", left: "ఇల్లు", lot: "దారి", niece: "మేనకోడలు", nephew: "మేనల్లుడు", aunt: "అత్త", sister: "సోదరి", daughter: "కుమార్తె", leaf: "ఆకు", leaves: "ఆకులు", knife: "కత్తి", knives: "కత్తులు", shelf: "అలమర", shelves: "అలమరలు", child: "పిల్లవాడు", children: "పిల్లలు", woman: "మహిళ", women: "మహిళలు",
+    "The answer is stated directly in the passage.": "సమాధానం పేరాలో నేరుగా ఇవ్వబడింది.", "Reading Comprehension": "పఠన అవగాహన", "Comprehension Passage": "అవగాహన పేరా", "Articles and Prepositions": "ఉపపదాలు మరియు సంబంధబోధకాలు", "Verbs and Tenses": "క్రియలు మరియు కాలాలు", "Correct Spelling": "సరైన వర్ణక్రమం", "Sentence Formation": "వాక్య నిర్మాణం", "Types of Sentence": "వాక్యాల రకాలు", "Ordering of Words": "పదాల క్రమం", Vocabulary: "పదజాలం", Synonyms: "పర్యాయపదాలు", "Synonyms and Antonyms": "పర్యాయపదాలు మరియు వ్యతిరేక పదాలు", "Confusing Words": "గందరగోళ పదాలు", "Idioms and Phrases": "జాతీయాలు మరియు పదబంధాలు", "Question Tags": "ప్రశ్నాంతాలు", Interjection: "ఆశ్చర్యార్థకం", Adjectives: "విశేషణాలు", Adverbs: "క్రియావిశేషణాలు", "Adjectives and Adverbs": "విశేషణాలు మరియు క్రియావిశేషణాలు", Pronouns: "సర్వనామాలు", "Kinds of Nouns": "నామవాచకాల రకాలు", "Collective Nouns": "సమూహ నామవాచకాలు", "Rhyming Words": "ప్రాస పదాలు", Gender: "లింగం", "Singular and Plural": "ఏకవచనం మరియు బహువచనం", Preposition: "సంబంధబోధకం", "Verbs and Type": "క్రియ మరియు రకం",
+  },
+};
+
+const NUMBER_WORDS = {
+  hi: { zero: "शून्य", one: "एक", two: "दो", three: "तीन", four: "चार", five: "पाँच", six: "छह", seven: "सात", eight: "आठ", nine: "नौ", ten: "दस", eleven: "ग्यारह", twelve: "बारह", thirteen: "तेरह", fourteen: "चौदह", fifteen: "पंद्रह", sixteen: "सोलह", seventeen: "सत्रह", eighteen: "अठारह", nineteen: "उन्नीस", twenty: "बीस", thirty: "तीस", forty: "चालीस", fifty: "पचास", sixty: "साठ", seventy: "सत्तर", eighty: "अस्सी", ninety: "नब्बे", hundred: "सौ", thousand: "हज़ार" },
+  te: { zero: "సున్నా", one: "ఒకటి", two: "రెండు", three: "మూడు", four: "నాలుగు", five: "ఐదు", six: "ఆరు", seven: "ఏడు", eight: "ఎనిమిది", nine: "తొమ్మిది", ten: "పది", eleven: "పదకొండు", twelve: "పన్నెండు", thirteen: "పదమూడు", fourteen: "పద్నాలుగు", fifteen: "పదిహేను", sixteen: "పదహారు", seventeen: "పదిహేడు", eighteen: "పద్దెనిమిది", nineteen: "పంతొమ్మిది", twenty: "ఇరవై", thirty: "ముప్పై", forty: "నలభై", fifty: "యాభై", sixty: "అరవై", seventy: "డెబ్బై", eighty: "ఎనభై", ninety: "తొంభై", hundred: "వంద", thousand: "వేలు" },
+};
+
+function translateNumberWords(value, locale) {
+  return String(value).replace(/[A-Za-z]+/g, (word) => NUMBER_WORDS[locale]?.[word.toLowerCase()] || word);
+}
+
+const PROPER_NAMES = {
+  hi: {
+    Aarav: "आरव", Aditi: "अदिति", Akhil: "अखिल", Anaya: "अनाया", Arjun: "अर्जुन", Diya: "दिया", Farhan: "फरहान", Gauri: "गौरी", Harini: "हारिणी", Ishaan: "ईशान", Jaya: "जया", Kabir: "कबीर", Kavita: "कविता", Kavya: "काव्या", Krish: "कृष", Laksh: "लक्ष", Meera: "मीरा", Mira: "मीरा", Naina: "नैना", Naman: "नमन", Neel: "नील", Neha: "नेहा", Omkar: "ओमकार", Pooja: "पूजा", Pranav: "प्रणव", Rani: "रानी", Rehan: "रेहान", Riya: "रिया", Rohan: "रोहन", Saanvi: "सान्वी", Sameer: "समीर", Sara: "सारा", Tanvi: "तन्वी", Tara: "तारा", Varun: "वरुण", Ved: "वेद", Vihaan: "विहान", Yash: "यश", Zoya: "ज़ोया", Advik: "अद्विक", Ishita: "इशिता",
+    Chennai: "चेन्नई", Mumbai: "मुंबई", Kolkata: "कोलकाता", Patna: "पटना", Bhopal: "भोपाल", Panaji: "पणजी", Sikkim: "सिक्किम", Kerala: "केरल", Goa: "गोवा", Rajasthan: "राजस्थान", Jaipur: "जयपुर",
+    Garba: "गरबा", Bihu: "बिहू", Bharatanatyam: "भरतनाट्यम", Ghoomar: "घूमर", Onam: "ओणम", Pongal: "पोंगल", Baisakhi: "बैसाखी",
+  },
+  te: {
+    Aarav: "ఆరవ్", Aditi: "అదితి", Akhil: "అఖిల్", Anaya: "అనయా", Arjun: "అర్జున్", Diya: "దియా", Farhan: "ఫర్హాన్", Gauri: "గౌరి", Harini: "హారిణి", Ishaan: "ఇషాన్", Jaya: "జయ", Kabir: "కబీర్", Kavita: "కవిత", Kavya: "కావ్య", Krish: "క్రిష్", Laksh: "లక్ష్", Meera: "మీరా", Mira: "మీరా", Naina: "నైనా", Naman: "నమన్", Neel: "నీల్", Neha: "నేహా", Omkar: "ఓంకార్", Pooja: "పూజ", Pranav: "ప్రణవ్", Rani: "రాణి", Rehan: "రేహాన్", Riya: "రియా", Rohan: "రోహన్", Saanvi: "సాన్వి", Sameer: "సమీర్", Sara: "సారా", Tanvi: "తన్వి", Tara: "తారా", Varun: "వరుణ్", Ved: "వేద్", Vihaan: "విహాన్", Yash: "యష్", Zoya: "జోయా", Advik: "అద్విక్", Ishita: "ఇషిత",
+    Chennai: "చెన్నై", Mumbai: "ముంబై", Kolkata: "కోల్‌కతా", Patna: "పట్నా", Bhopal: "భోపాల్", Panaji: "పణజి", Sikkim: "సిక్కిం", Kerala: "కేరళ", Goa: "గోవా", Rajasthan: "రాజస్థాన్", Jaipur: "జైపూర్",
+    Garba: "గర్బా", Bihu: "బిహు", Bharatanatyam: "భరతనాట్యం", Ghoomar: "ఘూమర్", Onam: "ఓణం", Pongal: "పొంగల్", Baisakhi: "బైసాఖీ",
+  },
+};
+
+function translateProperNames(value, locale) {
+  let translated = String(value);
+  for (const [source, target] of Object.entries(PROPER_NAMES[locale] || {})) {
+    translated = translated.replace(new RegExp(`(?<![A-Za-z])${source}(?![A-Za-z])`, "g"), target);
+  }
+  return translated;
+}
+
+const ACADEMIC_LABELS = {
+  hi: {
+    "Art and Culture of India": "भारत की कला और संस्कृति",
+    "Addition and Subtraction": "जोड़ और घटाव", "Addition and Subtraction of Like Fractions": "समान हर वाली भिन्नों का जोड़ और घटाव", "Air Pollution": "वायु प्रदूषण", "Angles, Directions and Mapping": "कोण, दिशाएँ और मानचित्रण", "Animals on Land and in Water": "स्थल और जल के जीव", "Area of Squares and Rectangles": "वर्ग और आयत का क्षेत्रफल", "Area of a Triangle as Part of a Rectangle": "आयत के भाग के रूप में त्रिभुज का क्षेत्रफल", "Ascending and Descending Order": "आरोही और अवरोही क्रम", "Capacity Conversion": "धारिता रूपांतरण", "Circulatory System": "परिसंचरण तंत्र", "Clothes and Fibres": "वस्त्र और रेशे", "Conservation of Soil": "मृदा संरक्षण", "Conservation of Water": "जल संरक्षण", Crops: "फसलें", "Data Analysis": "आँकड़ा विश्लेषण", "Digestive System": "पाचन तंत्र", "Directions and Mapping": "दिशाएँ और मानचित्रण", "Factors and Multiples": "गुणनखंड और गुणज", "Factors, Multiples and Their Properties": "गुणनखंड, गुणज और उनके गुण", Festivals: "त्योहार", "Food Preservation": "खाद्य संरक्षण", "Food and Nutrients": "भोजन और पोषक तत्त्व", Forests: "वन", "Four Fundamental Operations": "चार मूल संक्रियाएँ", "Houses and Shelters": "घर और आश्रय", "Hygiene and Cleanliness": "स्वच्छता और सफाई", Landscapes: "भूदृश्य", "Length and Mass Conversion": "लंबाई और द्रव्यमान रूपांतरण", "Like Fractions": "समान हर वाली भिन्नें", "Measurement and Unit Conversion": "मापन और इकाई रूपांतरण", Money: "धन", Mountains: "पर्वत", "Multiplication and Division": "गुणा और भाग", "Multiplication of Fractions": "भिन्नों का गुणा", "National Symbols": "राष्ट्रीय प्रतीक", "Natural Disasters": "प्राकृतिक आपदाएँ", "Number and Numeric System": "संख्या और संख्या पद्धति", "Perimeter and Area": "परिमाप और क्षेत्रफल", "Perimeter of Polygons": "बहुभुजों का परिमाप", Pictographs: "चित्रलेख", "Place Value and Number Names": "स्थानीय मान और संख्या-नाम", Plants: "पौधे", "Respiratory System": "श्वसन तंत्र", Rivers: "नदियाँ", "Rounding to Nearest 10, 100 and 1000": "निकटतम 10, 100 और 1000 तक पूर्णांकन", Seasons: "ऋतुएँ", Simplification: "सरलीकरण", "Simplification of Numerical Expressions": "संख्यात्मक व्यंजकों का सरलीकरण", "States and Capitals": "राज्य और राजधानियाँ", "Super Senses": "विशेष इंद्रिय क्षमताएँ", "Superlatives of India": "भारत के सर्वोच्च तथ्य", "Tables and Bar Diagrams": "तालिकाएँ और बार आरेख", "Time Conversion": "समय रूपांतरण", Transportation: "परिवहन", "Types of Angles": "कोणों के प्रकार", "Water Cycle": "जल चक्र", "Water Pollution": "जल प्रदूषण",
+    Analogies: "समानताएँ", "Area and Perimeter": "क्षेत्रफल और परिमाप", "Arranging of Fractions": "भिन्नों का क्रम", Average: "औसत", Circle: "वृत्त", Classification: "वर्गीकरण", "Climate and Natural Calamities": "जलवायु और प्राकृतिक आपदाएँ", "Complementary and Supplementary Angles": "पूरक और संपूरक कोण", "Conversion of Units": "इकाइयों का रूपांतरण", "Critical Thinking and Problem Solving": "आलोचनात्मक चिंतन और समस्या समाधान", "Decimal Numbers": "दशमलव संख्याएँ", "Digestion and Food Preservation": "पाचन और खाद्य संरक्षण", Energy: "ऊर्जा", "Familial Relations": "पारिवारिक संबंध", "Farming and Seed Dispersal": "खेती और बीज प्रकीर्णन", Fractions: "भिन्नें", "Functions of Plants Animals and Humans": "पौधों, पशुओं और मनुष्यों के कार्य", "Humans and Animals": "मनुष्य और पशु", "India at a Glance": "भारत एक नज़र में", "Indian Defence System": "भारतीय रक्षा व्यवस्था", "Indian Literary and Cultural Awards": "भारतीय साहित्यिक और सांस्कृतिक पुरस्कार", "LCM and HCF": "लघुत्तम समापवर्त्य और महत्तम समापवर्तक", "Lines and Angles": "रेखाएँ और कोण", "Mountain Terrain and Lifestyle": "पर्वतीय भूभाग और जीवनशैली", "National Symbols of India": "भारत के राष्ट्रीय प्रतीक", "National and International Organizations": "राष्ट्रीय और अंतरराष्ट्रीय संगठन", "National and International Personalities": "राष्ट्रीय और अंतरराष्ट्रीय व्यक्तित्व", "Natural Numbers": "प्राकृतिक संख्याएँ", "Operation on Numbers": "संख्याओं पर संक्रियाएँ", Percentage: "प्रतिशत", "Plane Figures": "समतल आकृतियाँ", "Prime and Composite Numbers": "अभाज्य और संयुक्त संख्याएँ", "Profit and Loss": "लाभ और हानि", "Ratio and Proportion": "अनुपात और समानुपात", "Roman Numerals": "रोमन अंक", "Scientific Devices in Daily Life": "दैनिक जीवन के वैज्ञानिक उपकरण", "Series and Sequences": "श्रृंखलाएँ और अनुक्रम", "Simple Interest": "साधारण ब्याज", "Solar System and Our Earth": "सौरमंडल और हमारी पृथ्वी", "Spatial and Mathematical Patterns": "स्थानिक और गणितीय पैटर्न", "Speed and Time": "गति और समय", Sports: "खेल", "Super Senses and Young Ones of Animals": "विशेष इंद्रियाँ और पशुओं के बच्चे", Temperature: "तापमान", "Tribal Communities and Forest": "जनजातीय समुदाय और वन", "Unitary Method": "ऐकिक विधि", "Uses of Water": "जल के उपयोग", "Visual and Logical Reasoning": "दृश्य और तार्किक तर्क", "Volume of Cube and Cuboids": "घन और घनाभ का आयतन", "Water Pollution and Microbial Diseases": "जल प्रदूषण और सूक्ष्मजीवी रोग",
+    "Alphabet Series": "वर्णमाला श्रृंखला", "Awards and Personalities": "पुरस्कार और व्यक्तित्व", "Coding and Decoding": "कूटलेखन और कूटपाठ", "Current Affairs": "समसामयिकी", "Data Handling": "आँकड़ा प्रबंधन", Decimals: "दशमलव", Directions: "दिशाएँ", Environment: "पर्यावरण", "Everyday Life": "दैनिक जीवन", "General Science": "सामान्य विज्ञान", "Geography": "भूगोल", "Geometry and Angles": "ज्यामिति और कोण", "History and Civics": "इतिहास और नागरिक शास्त्र", "India and the World": "भारत और विश्व", "Indian Defence": "भारतीय रक्षा", "Logical Reasoning": "तार्किक तर्क", "Measurement and Conversion": "मापन और रूपांतरण", "Number Series": "संख्या श्रृंखला", "Numbers and Place Value": "संख्याएँ और स्थानीय मान", Patterns: "पैटर्न", "Ranking and Order": "श्रेणी और क्रम", "Time and Money": "समय और धन",
+  },
+  te: {
+    "Art and Culture of India": "భారతదేశ కళలు మరియు సంస్కృతి",
+    "Addition and Subtraction": "కూడిక మరియు తీసివేత", "Addition and Subtraction of Like Fractions": "సమాన హార భిన్నాల కూడిక మరియు తీసివేత", "Air Pollution": "వాయు కాలుష్యం", "Angles, Directions and Mapping": "కోణాలు, దిశలు మరియు పట నిర్ధారణ", "Animals on Land and in Water": "నేలపై మరియు నీటిలోని జంతువులు", "Area of Squares and Rectangles": "చతురస్రాలు మరియు దీర్ఘచతురస్రాల వైశాల్యం", "Area of a Triangle as Part of a Rectangle": "దీర్ఘచతురస్ర భాగంగా త్రిభుజ వైశాల్యం", "Ascending and Descending Order": "ఆరోహణ మరియు అవరోహణ క్రమం", "Capacity Conversion": "సామర్థ్య ప్రమాణ మార్పిడి", "Circulatory System": "రక్త ప్రసరణ వ్యవస్థ", "Clothes and Fibres": "దుస్తులు మరియు నారలు", "Conservation of Soil": "మట్టి సంరక్షణ", "Conservation of Water": "నీటి సంరక్షణ", Crops: "పంటలు", "Data Analysis": "దత్తాంశ విశ్లేషణ", "Digestive System": "జీర్ణ వ్యవస్థ", "Directions and Mapping": "దిశలు మరియు పట నిర్ధారణ", "Factors and Multiples": "భాజకాలు మరియు గుణితాలు", "Factors, Multiples and Their Properties": "భాజకాలు, గుణితాలు మరియు వాటి లక్షణాలు", Festivals: "పండుగలు", "Food Preservation": "ఆహార సంరక్షణ", "Food and Nutrients": "ఆహారం మరియు పోషకాలు", Forests: "అడవులు", "Four Fundamental Operations": "నాలుగు ప్రాథమిక గణిత క్రియలు", "Houses and Shelters": "ఇళ్లు మరియు ఆశ్రయాలు", "Hygiene and Cleanliness": "పరిశుభ్రత మరియు శుభ్రత", Landscapes: "భూదృశ్యాలు", "Length and Mass Conversion": "పొడవు మరియు ద్రవ్యరాశి ప్రమాణ మార్పిడి", "Like Fractions": "సమాన హార భిన్నాలు", "Measurement and Unit Conversion": "కొలతలు మరియు ప్రమాణ మార్పిడి", Money: "ధనం", Mountains: "పర్వతాలు", "Multiplication and Division": "గుణకారం మరియు భాగహారం", "Multiplication of Fractions": "భిన్నాల గుణకారం", "National Symbols": "జాతీయ చిహ్నాలు", "Natural Disasters": "ప్రకృతి విపత్తులు", "Number and Numeric System": "సంఖ్యలు మరియు సంఖ్యా పద్ధతి", "Perimeter and Area": "పరిధి మరియు వైశాల్యం", "Perimeter of Polygons": "బహుభుజాల పరిధి", Pictographs: "చిత్రలేఖనాలు", "Place Value and Number Names": "స్థాన విలువ మరియు సంఖ్యా నామాలు", Plants: "మొక్కలు", "Respiratory System": "శ్వాసకోశ వ్యవస్థ", Rivers: "నదులు", "Rounding to Nearest 10, 100 and 1000": "సమీప 10, 100 మరియు 1000లకు చుట్టడం", Seasons: "ఋతువులు", Simplification: "సరళీకరణ", "Simplification of Numerical Expressions": "సంఖ్యా వ్యక్తీకరణల సరళీకరణ", "States and Capitals": "రాష్ట్రాలు మరియు రాజధానులు", "Super Senses": "ప్రత్యేక ఇంద్రియ శక్తులు", "Superlatives of India": "భారతదేశ విశిష్టతలు", "Tables and Bar Diagrams": "పట్టికలు మరియు బార్ రేఖాచిత్రాలు", "Time Conversion": "సమయ ప్రమాణ మార్పిడి", Transportation: "రవాణా", "Types of Angles": "కోణాల రకాలు", "Water Cycle": "జల చక్రం", "Water Pollution": "నీటి కాలుష్యం",
+    Analogies: "సారూప్యతలు", "Area and Perimeter": "వైశాల్యం మరియు పరిధి", "Arranging of Fractions": "భిన్నాల క్రమీకరణ", Average: "సగటు", Circle: "వృత్తం", Classification: "వర్గీకరణ", "Climate and Natural Calamities": "వాతావరణం మరియు ప్రకృతి విపత్తులు", "Complementary and Supplementary Angles": "పూరక మరియు సంపూరక కోణాలు", "Conversion of Units": "ప్రమాణాల మార్పిడి", "Critical Thinking and Problem Solving": "విమర్శనాత్మక ఆలోచన మరియు సమస్య పరిష్కారం", "Decimal Numbers": "దశాంశ సంఖ్యలు", "Digestion and Food Preservation": "జీర్ణక్రియ మరియు ఆహార సంరక్షణ", Energy: "శక్తి", "Familial Relations": "కుటుంబ సంబంధాలు", "Farming and Seed Dispersal": "వ్యవసాయం మరియు విత్తన వ్యాప్తి", Fractions: "భిన్నాలు", "Functions of Plants Animals and Humans": "మొక్కలు, జంతువులు మరియు మానవుల విధులు", "Humans and Animals": "మానవులు మరియు జంతువులు", "India at a Glance": "భారతదేశం ఒక చూపులో", "Indian Defence System": "భారత రక్షణ వ్యవస్థ", "Indian Literary and Cultural Awards": "భారత సాహిత్య మరియు సాంస్కృతిక పురస్కారాలు", "LCM and HCF": "కనిష్ఠ సామాన్య గుణితం మరియు గరిష్ఠ సామాన్య భాజకం", "Lines and Angles": "రేఖలు మరియు కోణాలు", "Mountain Terrain and Lifestyle": "పర్వత భూభాగం మరియు జీవనశైలి", "National Symbols of India": "భారత జాతీయ చిహ్నాలు", "National and International Organizations": "జాతీయ మరియు అంతర్జాతీయ సంస్థలు", "National and International Personalities": "జాతీయ మరియు అంతర్జాతీయ ప్రముఖులు", "Natural Numbers": "సహజ సంఖ్యలు", "Operation on Numbers": "సంఖ్యలపై క్రియలు", Percentage: "శాతం", "Plane Figures": "సమతల ఆకారాలు", "Prime and Composite Numbers": "ప్రధాన మరియు సంయుక్త సంఖ్యలు", "Profit and Loss": "లాభం మరియు నష్టం", "Ratio and Proportion": "నిష్పత్తి మరియు అనుపాతం", "Roman Numerals": "రోమన్ సంఖ్యలు", "Scientific Devices in Daily Life": "రోజువారీ జీవితంలోని శాస్త్రీయ పరికరాలు", "Series and Sequences": "శ్రేణులు మరియు క్రమాలు", "Simple Interest": "సాధారణ వడ్డీ", "Solar System and Our Earth": "సౌర వ్యవస్థ మరియు మన భూమి", "Spatial and Mathematical Patterns": "స్థానిక మరియు గణిత నమూనాలు", "Speed and Time": "వేగం మరియు సమయం", Sports: "క్రీడలు", "Super Senses and Young Ones of Animals": "ప్రత్యేక ఇంద్రియాలు మరియు జంతువుల పిల్లలు", Temperature: "ఉష్ణోగ్రత", "Tribal Communities and Forest": "గిరిజన సముదాయాలు మరియు అడవి", "Unitary Method": "ఏకక పద్ధతి", "Uses of Water": "నీటి ఉపయోగాలు", "Visual and Logical Reasoning": "దృశ్య మరియు తార్కిక వివేచన", "Volume of Cube and Cuboids": "ఘనం మరియు ఘనాయతాల ఘనపరిమాణం", "Water Pollution and Microbial Diseases": "నీటి కాలుష్యం మరియు సూక్ష్మజీవ వ్యాధులు",
+    "Alphabet Series": "అక్షర శ్రేణి", "Awards and Personalities": "పురస్కారాలు మరియు ప్రముఖులు", "Coding and Decoding": "సంకేతీకరణ మరియు విసంకేతీకరణ", "Current Affairs": "సమకాలీన అంశాలు", "Data Handling": "దత్తాంశ నిర్వహణ", Decimals: "దశాంశాలు", Directions: "దిశలు", Environment: "పర్యావరణం", "Everyday Life": "రోజువారీ జీవితం", "General Science": "సాధారణ విజ్ఞానం", Geography: "భూగోళ శాస్త్రం", "Geometry and Angles": "రేఖాగణితం మరియు కోణాలు", "History and Civics": "చరిత్ర మరియు పౌరశాస్త్రం", "India and the World": "భారతదేశం మరియు ప్రపంచం", "Indian Defence": "భారత రక్షణ", "Logical Reasoning": "తార్కిక వివేచన", "Measurement and Conversion": "కొలతలు మరియు మార్పిడి", "Number Series": "సంఖ్యా శ్రేణి", "Numbers and Place Value": "సంఖ్యలు మరియు స్థాన విలువ", Patterns: "నమూనాలు", "Ranking and Order": "స్థాన క్రమం", "Time and Money": "సమయం మరియు ధనం",
   },
 };
 
 const STEM_RULES = {
   hi: [
+    [/^Which option gives the correct number name for (.+) and the place value of (.+)\?$/i, (_, number, digit) => `${number} का सही संख्या-नाम और अंक ${digit} का स्थानीय मान किस विकल्प में है?`],
+    [/^Which option arranges (.+) in (ascending|descending) order\?$/i, (_, values, direction) => `${values} को ${direction.toLowerCase() === "ascending" ? "आरोही" : "अवरोही"} क्रम में लगाने वाला विकल्प चुनिए।`],
+    [/^Which option correctly rounds (.+) to the nearest 10, 100 and 1000\?$/i, (_, number) => `${number} को निकटतम 10, 100 और 1000 तक सही पूर्णांकित करने वाला विकल्प चुनिए।`],
+    [/^A library had (.+) books, received (.+) more and then lent (.+)\. How many books remain\?$/i, (_, start, added, lent) => `एक पुस्तकालय में ${start} पुस्तकें थीं, ${added} और मिलीं तथा ${lent} उधार दी गईं। कितनी पुस्तकें बचीं?`],
+    [/^(.+) arranges (.+) boxes with (.+) counters each\. All (.+) counters are shared equally among (.+) teams\. How many counters does each team receive\?$/i, (_, name, boxes, each, total, teams) => `${name} ने ${boxes} डिब्बों में प्रत्येक में ${each} काउंटर रखे। सभी ${total} काउंटर ${teams} टीमों में बराबर बाँटे गए। प्रत्येक टीम को कितने काउंटर मिले?`],
+    [/^For the numbers (.+) and (.+), which statement correctly describes both a factor and a multiple\?$/i, (_, factor, value) => `${factor} और ${value} के लिए गुणनखंड तथा गुणज दोनों को सही बताने वाला कथन चुनिए।`],
+    [/^(.+) needs (.+) of (.+) counters\. How many counters are needed\?$/i, (_, name, fraction, whole) => `${name} को ${whole} काउंटरों का ${fraction} भाग चाहिए। कितने काउंटर चाहिए?`],
+    [/^Convert (.+) km (.+) m into metres and (.+) kg (.+) g into grams\.$/i, (_, km, m, kg, g) => `${km} km ${m} m को मीटर में और ${kg} kg ${g} g को ग्राम में बदलिए।`],
+    [/^(.+)'s journey lasts (.+) hours (.+) minutes\. How many minutes is that altogether\?$/i, (_, name, hours, minutes) => `${name} की यात्रा ${hours} घंटे ${minutes} मिनट चली। कुल कितने मिनट हुए?`],
+    [/^(.+) buys (.+) notebooks costing (₹.+) each and pays (₹.+)\. What change should be received\?$/i, (_, name, quantity, price, paid) => `${name} ने ${quantity} कॉपियाँ खरीदीं, प्रत्येक की कीमत ${price} है, और ${paid} दिए। कितने रुपये वापस मिलने चाहिए?`],
+    [/^(.+) draws a regular polygon with (.+) equal sides of (.+) cm each\. What is its perimeter\?$/i, (_, name, sides, length) => `${name} ने ${sides} बराबर भुजाओं वाला नियमित बहुभुज बनाया, जिसकी प्रत्येक भुजा ${length} cm है। उसका परिमाप कितना है?`],
+    [/^(.+)'s diagram has a square of side (.+) cm and a rectangle measuring (.+) cm by (.+) cm\. What is their combined area\?$/i, (_, name, side, length, width) => `${name} के आरेख में ${side} cm भुजा का वर्ग और ${length} cm × ${width} cm का आयत है। दोनों का कुल क्षेत्रफल कितना है?`],
+    [/^(.+) draws a diagonal across a (.+) cm by (.+) cm rectangle to form two equal triangles\. What is the area of one triangle\?$/i, (_, name, length, width) => `${name} ने ${length} cm × ${width} cm आयत में विकर्ण खींचकर दो बराबर त्रिभुज बनाए। एक त्रिभुज का क्षेत्रफल कितना है?`],
+    [/^(.+) measures an angle as (.+)°\. What type of angle is it\?$/i, (_, name, angle) => `${name} ने एक कोण ${angle}° मापा। यह किस प्रकार का कोण है?`],
+    [/^On a neighbourhood map, (.+) walks (.+) m facing (north|east|south|west), then makes (.+) right-angle turns? (clockwise|anticlockwise)\. Which direction is now faced\?$/i, (_, name, distance, direction, turns, rotation) => `पड़ोस के नक्शे पर ${name} ${translateAcademicText(direction, "hi")} दिशा में ${distance} m चलता है, फिर ${rotation.toLowerCase() === "clockwise" ? "घड़ी की दिशा में" : "घड़ी की विपरीत दिशा में"} ${turns} समकोण मोड़ लेता है। अब उसका मुख किस दिशा में है?`],
+    [/^(.+)'s pictograph uses one symbol for (.+) items\. How many (.+) are represented\?$/i, (_, name, key, item) => `${name} के चित्रलेख में एक चिह्न ${key} वस्तुओं को दर्शाता है। कितनी ${translateAcademicText(item, "hi")} दर्शाई गई हैं?`],
+    [/^(.+) is a factor of (.+), and (.+) is a multiple of (.+)\.$/i, (_, first, second, third, fourth) => `${first}, ${second} का गुणनखंड है और ${third}, ${fourth} का गुणज है।`],
+    [/^(.+) is a factor of (.+)\.$/i, (_, first, second) => `${first}, ${second} का गुणनखंड है।`],
+    [/^(.+) is a multiple of (.+)\.$/i, (_, first, second) => `${first}, ${second} का गुणज है।`],
+    [/^(.+) m and (.+) g$/i, (_, metres, grams) => `${metres} m और ${grams} g`],
+    [/^(.+) minutes$/i, (_, count) => `${count} मिनट`],
+    [/^([a-z -]+); (\d+)$/i, (_, words, place) => `${translateNumberWords(words, "hi")}; ${place}`],
+    [/^(\d+) identical notebooks cost (₹[\d,]+)\. What will (\d+) notebooks cost at the same rate\?$/i, (_, quantity, cost, requested) => `${quantity} समान कॉपियों की कीमत ${cost} है। उसी दर पर ${requested} कॉपियों की कीमत कितनी होगी?`],
+    [/^(.+) deposits (₹[\d,]+) at (.+)% simple interest per year for (.+) years?\. What simple interest is earned\?$/i, (_, name, principal, rate, years) => `${name} ${principal} को ${rate}% वार्षिक साधारण ब्याज पर ${years} वर्ष के लिए जमा करता है। अर्जित साधारण ब्याज कितना है?`],
+    [/^(.+) buys an item for (₹[\d,]+) and earns a profit of (₹[\d,]+)\. What is the selling price\?$/i, (_, name, cost, profit) => `${name} एक वस्तु ${cost} में खरीदता है और ${profit} का लाभ कमाता है। विक्रय मूल्य कितना है?`],
+    [/^Find the average of (.+), (.+), and (.+)\.$/i, (_, first, second, third) => `${first}, ${second} और ${third} का औसत ज्ञात कीजिए।`],
+    [/^Arrange (.+), (.+), and (.+) in ascending order\.$/i, (_, first, second, third) => `${first}, ${second} और ${third} को आरोही क्रम में लगाइए।`],
+    [/^A table records (.+) red, (.+) blue, and (.+) green flags\. How many flags are recorded altogether\?$/i, (_, red, blue, green) => `एक तालिका में ${red} लाल, ${blue} नीले और ${green} हरे झंडे दर्ज हैं। कुल कितने झंडे हैं?`],
+    [/^Figure Series (\d+)$/i, (_, number) => `आकृति श्रृंखला ${number}`],
+    [/^Geometrical Completion (\d+)$/i, (_, number) => `ज्यामितीय पूर्णता ${number}`],
+    [/^Vertical Mirror Imaging (\d+)$/i, (_, number) => `ऊर्ध्वाधर दर्पण प्रतिबिंब ${number}`],
+    [/^Horizontal Water Imaging (\d+)$/i, (_, number) => `क्षैतिज जल प्रतिबिंब ${number}`],
+    [/^Embedded Figure (\d+)$/i, (_, number) => `अंतर्निहित आकृति ${number}`],
+    [/^The successive increases are (.+)\.$/i, (_, values) => `क्रमिक वृद्धियाँ ${values} हैं।`],
+    [/^The sequence moves forward (\d+) letters? each time\.$/i, (_, count) => `श्रृंखला हर बार ${count} अक्षर आगे बढ़ती है।`],
+    [/^On pattern card (.+), both the outline and the internal marks follow a rule\. Which figure comes next\?$/i, (_, card) => `पैटर्न कार्ड ${card} में बाहरी आकृति और अंदरूनी चिह्न दोनों एक नियम का अनुसरण करते हैं। अगली आकृति कौन-सी होगी?`],
+    [/^Series panel (.+) follows an alternating rule\. Select the figure that comes next\.$/i, (_, panel) => `श्रृंखला पैनल ${panel} एकांतर नियम का अनुसरण करता है। अगली आकृति चुनिए।`],
+    [/^Geometric design (.+) has a gap with (.+) equal sides of (.+) cm each\. Which complete figure fits the gap\?$/i, (_, design, sides, length) => `ज्यामितीय डिज़ाइन ${design} में ${sides} बराबर भुजाओं वाला रिक्त स्थान है और प्रत्येक भुजा ${length} सेमी है। कौन-सी पूर्ण आकृति इस रिक्त स्थान में सही बैठती है?`],
+    [/^A vertical mirror is placed to the right of card (.+)\. The card shows a right-pointing arrow with a dot on its left\. Choose its mirror image\.$/i, (_, card) => `कार्ड ${card} के दाईं ओर एक ऊर्ध्वाधर दर्पण रखा है। कार्ड में दाईं ओर संकेत करता तीर है और उसके बाईं ओर एक बिंदु है। उसका दर्पण प्रतिबिंब चुनिए।`],
+    [/^Symbol card (.+) contains an upward arrow with (.+) dots? below it\. Choose its water image\.$/i, (_, card, count) => `प्रतीक कार्ड ${card} में ऊपर की ओर तीर है और उसके नीचे ${count} बिंदु हैं। उसका जल प्रतिबिंब चुनिए।`],
+    [/^Diagram (.+) is made with (.+) straight and curved lines and contains one complete simple figure\. Which figure is embedded without changing any line\?$/i, (_, diagram, lines) => `आरेख ${diagram} में ${lines} सीधी और वक्र रेखाएँ हैं तथा इसमें एक पूर्ण सरल आकृति छिपी है। किसी रेखा को बदले बिना कौन-सी आकृति अंतर्निहित है?`],
+    [/^(.+) with (\d+) marks$/i, (_, shape, count) => `${translateAcademicText(shape, "hi")} पर ${count} चिह्न`],
+    [/^(.+) with (dot|line|cross)$/i, (_, shape, mark) => `${translateAcademicText(shape, "hi")} पर ${{ dot: "बिंदु", line: "रेखा", cross: "क्रॉस" }[mark.toLowerCase()]}`],
+    [/^rotated (.+)$/i, (_, shape) => `घुमाया हुआ ${translateAcademicText(shape, "hi")}`],
+    [/^(.+) without a mark$/i, (_, shape) => `बिना चिह्न का ${translateAcademicText(shape, "hi")}`],
+    [/^The series alternates between the marked (.+) and the (.+)\.$/i, (_, first, second) => `श्रृंखला चिह्नित ${translateAcademicText(first, "hi")} और ${translateAcademicText(second, "hi")} के बीच बारी-बारी चलती है।`],
+    [/^A closed figure with (.+) sides is a (.+)\.$/i, (_, sides, shape) => `${sides} भुजाओं वाली बंद आकृति ${translateAcademicText(shape, "hi")} होती है।`],
+    [/^The complete outline of a (.+) can be traced inside the drawing\.$/i, (_, shape) => `चित्र के भीतर ${translateAcademicText(shape, "hi")} की पूरी बाहरी रेखा खोजी जा सकती है।`],
     [/^Find the next number: (.+)$/i, (_, values) => `अगली संख्या ज्ञात कीजिए: ${values}`],
     [/^Complete the letter pattern: (.+)$/i, (_, values) => `अक्षर पैटर्न पूरा कीजिए: ${values}`],
     [/^What is the place value of the digit (.+) in (.+)\?$/i, (_, digit, number) => `${number} में अंक ${digit} का स्थानीय मान क्या है?`],
@@ -594,6 +835,54 @@ const STEM_RULES = {
     [/^At (.+) (\d+), which option correctly identifies the (.+)\?$/i, (_, context, station, description) => `${translateAcademicText(description, "hi")} की सही पहचान करने वाला विकल्प चुनिए।`],
   ],
   te: [
+    [/^Which option gives the correct number name for (.+) and the place value of (.+)\?$/i, (_, number, digit) => `${number}కు సరైన సంఖ్యా నామం, ${digit} అంకె స్థాన విలువ ఉన్న ఎంపిక ఏది?`],
+    [/^Which option arranges (.+) in (ascending|descending) order\?$/i, (_, values, direction) => `${values}ను ${direction.toLowerCase() === "ascending" ? "ఆరోహణ" : "అవరోహణ"} క్రమంలో అమర్చిన ఎంపికను ఎంచుకోండి.`],
+    [/^Which option correctly rounds (.+) to the nearest 10, 100 and 1000\?$/i, (_, number) => `${number}ను సమీప 10, 100, 1000లకు సరిగ్గా చుట్టిన ఎంపికను ఎంచుకోండి.`],
+    [/^A library had (.+) books, received (.+) more and then lent (.+)\. How many books remain\?$/i, (_, start, added, lent) => `ఒక గ్రంథాలయంలో ${start} పుస్తకాలు ఉన్నాయి, మరో ${added} వచ్చాయి, తరువాత ${lent} అరువిచ్చారు. ఎన్ని పుస్తకాలు మిగిలాయి?`],
+    [/^(.+) arranges (.+) boxes with (.+) counters each\. All (.+) counters are shared equally among (.+) teams\. How many counters does each team receive\?$/i, (_, name, boxes, each, total, teams) => `${name} ${boxes} పెట్టెల్లో ఒక్కో పెట్టెలో ${each} కౌంటర్లు ఉంచారు. మొత్తం ${total} కౌంటర్లను ${teams} జట్లకు సమంగా పంచారు. ఒక్కో జట్టుకు ఎన్ని కౌంటర్లు వచ్చాయి?`],
+    [/^For the numbers (.+) and (.+), which statement correctly describes both a factor and a multiple\?$/i, (_, factor, value) => `${factor}, ${value}లకు భాజకం, గుణితం రెండింటినీ సరిగ్గా తెలిపే వాక్యాన్ని ఎంచుకోండి.`],
+    [/^(.+) needs (.+) of (.+) counters\. How many counters are needed\?$/i, (_, name, fraction, whole) => `${name}కు ${whole} కౌంటర్లలో ${fraction} భాగం కావాలి. ఎన్ని కౌంటర్లు అవసరం?`],
+    [/^Convert (.+) km (.+) m into metres and (.+) kg (.+) g into grams\.$/i, (_, km, m, kg, g) => `${km} km ${m} mను మీటర్లలోకి, ${kg} kg ${g} gను గ్రాముల్లోకి మార్చండి.`],
+    [/^(.+)'s journey lasts (.+) hours (.+) minutes\. How many minutes is that altogether\?$/i, (_, name, hours, minutes) => `${name} ప్రయాణం ${hours} గంటలు ${minutes} నిమిషాలు కొనసాగింది. మొత్తం ఎన్ని నిమిషాలు?`],
+    [/^(.+) buys (.+) notebooks costing (₹.+) each and pays (₹.+)\. What change should be received\?$/i, (_, name, quantity, price, paid) => `${name} ఒక్కొక్కటి ${price} ధర గల ${quantity} నోట్‌బుక్లు కొని ${paid} చెల్లించారు. ఎంత చిల్లర రావాలి?`],
+    [/^(.+) draws a regular polygon with (.+) equal sides of (.+) cm each\. What is its perimeter\?$/i, (_, name, sides, length) => `${name} ${sides} సమాన భుజాల క్రమ బహుభుజాన్ని గీశారు; ఒక్కో భుజం ${length} cm. దాని పరిధి ఎంత?`],
+    [/^(.+)'s diagram has a square of side (.+) cm and a rectangle measuring (.+) cm by (.+) cm\. What is their combined area\?$/i, (_, name, side, length, width) => `${name} రేఖాచిత్రంలో ${side} cm భుజం గల చతురస్రం, ${length} cm × ${width} cm దీర్ఘచతురస్రం ఉన్నాయి. వాటి మొత్తం వైశాల్యం ఎంత?`],
+    [/^(.+) draws a diagonal across a (.+) cm by (.+) cm rectangle to form two equal triangles\. What is the area of one triangle\?$/i, (_, name, length, width) => `${name} ${length} cm × ${width} cm దీర్ఘచతురస్రంలో కర్ణం గీసి రెండు సమాన త్రిభుజాలు చేశారు. ఒక త్రిభుజం వైశాల్యం ఎంత?`],
+    [/^(.+) measures an angle as (.+)°\. What type of angle is it\?$/i, (_, name, angle) => `${name} ఒక కోణాన్ని ${angle}°గా కొలిచారు. అది ఏ రకమైన కోణం?`],
+    [/^On a neighbourhood map, (.+) walks (.+) m facing (north|east|south|west), then makes (.+) right-angle turns? (clockwise|anticlockwise)\. Which direction is now faced\?$/i, (_, name, distance, direction, turns, rotation) => `పరిసరాల పటంలో ${name} ${translateAcademicText(direction, "te")} వైపు ${distance} m నడిచి, తరువాత ${rotation.toLowerCase() === "clockwise" ? "సవ్యదిశలో" : "అపసవ్యదిశలో"} ${turns} లంబకోణ మలుపులు తిరిగారు. ఇప్పుడు ఏ దిశకు ముఖం ఉంది?`],
+    [/^(.+)'s pictograph uses one symbol for (.+) items\. How many (.+) are represented\?$/i, (_, name, key, item) => `${name} చిత్రలేఖనంలో ఒక గుర్తు ${key} వస్తువులను సూచిస్తుంది. ఎన్ని ${translateAcademicText(item, "te")} చూపబడ్డాయి?`],
+    [/^(.+) is a factor of (.+), and (.+) is a multiple of (.+)\.$/i, (_, first, second, third, fourth) => `${first}, ${second}కు భాజకం; ${third}, ${fourth}కు గుణితం.`],
+    [/^(.+) is a factor of (.+)\.$/i, (_, first, second) => `${first}, ${second}కు భాజకం.`],
+    [/^(.+) is a multiple of (.+)\.$/i, (_, first, second) => `${first}, ${second}కు గుణితం.`],
+    [/^(.+) m and (.+) g$/i, (_, metres, grams) => `${metres} m మరియు ${grams} g`],
+    [/^(.+) minutes$/i, (_, count) => `${count} నిమిషాలు`],
+    [/^([a-z -]+); (\d+)$/i, (_, words, place) => `${translateNumberWords(words, "te")}; ${place}`],
+    [/^(\d+) identical notebooks cost (₹[\d,]+)\. What will (\d+) notebooks cost at the same rate\?$/i, (_, quantity, cost, requested) => `${quantity} ఒకే రకమైన నోట్‌బుక్ల ధర ${cost}. అదే రేటుకు ${requested} నోట్‌బుక్ల ధర ఎంత?`],
+    [/^(.+) deposits (₹[\d,]+) at (.+)% simple interest per year for (.+) years?\. What simple interest is earned\?$/i, (_, name, principal, rate, years) => `${name} ${principal}ను సంవత్సరానికి ${rate}% సాధారణ వడ్డీపై ${years} సంవత్సరాలకు జమ చేశారు. లభించే సాధారణ వడ్డీ ఎంత?`],
+    [/^(.+) buys an item for (₹[\d,]+) and earns a profit of (₹[\d,]+)\. What is the selling price\?$/i, (_, name, cost, profit) => `${name} ఒక వస్తువును ${cost}కు కొని ${profit} లాభం పొందారు. అమ్మకపు ధర ఎంత?`],
+    [/^Find the average of (.+), (.+), and (.+)\.$/i, (_, first, second, third) => `${first}, ${second}, ${third}ల సగటును కనుగొనండి.`],
+    [/^Arrange (.+), (.+), and (.+) in ascending order\.$/i, (_, first, second, third) => `${first}, ${second}, ${third}లను ఆరోహణ క్రమంలో అమర్చండి.`],
+    [/^A table records (.+) red, (.+) blue, and (.+) green flags\. How many flags are recorded altogether\?$/i, (_, red, blue, green) => `ఒక పట్టికలో ${red} ఎరుపు, ${blue} నీలం, ${green} ఆకుపచ్చ జెండాలు నమోదయ్యాయి. మొత్తం జెండాలు ఎన్ని?`],
+    [/^Figure Series (\d+)$/i, (_, number) => `ఆకార శ్రేణి ${number}`],
+    [/^Geometrical Completion (\d+)$/i, (_, number) => `రేఖాగణిత పూర్తి ${number}`],
+    [/^Vertical Mirror Imaging (\d+)$/i, (_, number) => `నిలువు అద్దం ప్రతిబింబం ${number}`],
+    [/^Horizontal Water Imaging (\d+)$/i, (_, number) => `అడ్డ నీటి ప్రతిబింబం ${number}`],
+    [/^Embedded Figure (\d+)$/i, (_, number) => `దాగి ఉన్న ఆకారం ${number}`],
+    [/^The successive increases are (.+)\.$/i, (_, values) => `వరుస పెరుగుదలలు ${values}.`],
+    [/^The sequence moves forward (\d+) letters? each time\.$/i, (_, count) => `శ్రేణి ప్రతి సారి ${count} అక్షరాలు ముందుకు సాగుతుంది.`],
+    [/^On pattern card (.+), both the outline and the internal marks follow a rule\. Which figure comes next\?$/i, (_, card) => `నమూనా కార్డు ${card}లో బయటి ఆకారం, లోపలి గుర్తులు రెండూ ఒక నియమాన్ని అనుసరిస్తాయి. తరువాత వచ్చే ఆకారం ఏది?`],
+    [/^Series panel (.+) follows an alternating rule\. Select the figure that comes next\.$/i, (_, panel) => `శ్రేణి పలక ${panel} ఒక ప్రత్యామ్నాయ నియమాన్ని అనుసరిస్తుంది. తరువాత వచ్చే ఆకారాన్ని ఎంచుకోండి.`],
+    [/^Geometric design (.+) has a gap with (.+) equal sides of (.+) cm each\. Which complete figure fits the gap\?$/i, (_, design, sides, length) => `రేఖాగణిత నమూనా ${design}లో ${sides} సమాన భుజాల ఖాళీ ఉంది; ప్రతి భుజం ${length} సెం.మీ. ఆ ఖాళీకి సరిపోయే పూర్తి ఆకారం ఏది?`],
+    [/^A vertical mirror is placed to the right of card (.+)\. The card shows a right-pointing arrow with a dot on its left\. Choose its mirror image\.$/i, (_, card) => `కార్డు ${card}కు కుడివైపు నిలువు అద్దం ఉంచారు. కార్డులో కుడివైపు చూపే బాణం, దాని ఎడమవైపు ఒక చుక్క ఉన్నాయి. దాని అద్దం ప్రతిబింబాన్ని ఎంచుకోండి.`],
+    [/^Symbol card (.+) contains an upward arrow with (.+) dots? below it\. Choose its water image\.$/i, (_, card, count) => `చిహ్న కార్డు ${card}లో పైకి చూపే బాణం, దాని కింద ${count} చుక్కలు ఉన్నాయి. దాని నీటి ప్రతిబింబాన్ని ఎంచుకోండి.`],
+    [/^Diagram (.+) is made with (.+) straight and curved lines and contains one complete simple figure\. Which figure is embedded without changing any line\?$/i, (_, diagram, lines) => `రేఖాచిత్రం ${diagram}లో ${lines} సరళ, వక్ర రేఖలు ఉన్నాయి; అందులో ఒక పూర్తి సరళ ఆకారం దాగి ఉంది. ఏ రేఖను మార్చకుండా దాగి ఉన్న ఆకారం ఏది?`],
+    [/^(.+) with (\d+) marks$/i, (_, shape, count) => `${translateAcademicText(shape, "te")}పై ${count} గుర్తులు`],
+    [/^(.+) with (dot|line|cross)$/i, (_, shape, mark) => `${translateAcademicText(shape, "te")}పై ${{ dot: "చుక్క", line: "గీత", cross: "క్రాస్" }[mark.toLowerCase()]}`],
+    [/^rotated (.+)$/i, (_, shape) => `తిప్పిన ${translateAcademicText(shape, "te")}`],
+    [/^(.+) without a mark$/i, (_, shape) => `గుర్తు లేని ${translateAcademicText(shape, "te")}`],
+    [/^The series alternates between the marked (.+) and the (.+)\.$/i, (_, first, second) => `శ్రేణి గుర్తు ఉన్న ${translateAcademicText(first, "te")}, ${translateAcademicText(second, "te")} మధ్య మారుతూ ఉంటుంది.`],
+    [/^A closed figure with (.+) sides is a (.+)\.$/i, (_, sides, shape) => `${sides} భుజాలున్న మూసిన ఆకారం ${translateAcademicText(shape, "te")} అవుతుంది.`],
+    [/^The complete outline of a (.+) can be traced inside the drawing\.$/i, (_, shape) => `చిత్రంలో ${translateAcademicText(shape, "te")} పూర్తి బయటి రేఖను గుర్తించవచ్చు.`],
     [/^Find the next number: (.+)$/i, (_, values) => `తదుపరి సంఖ్యను కనుగొనండి: ${values}`],
     [/^Complete the letter pattern: (.+)$/i, (_, values) => `అక్షర నమూనాను పూర్తి చేయండి: ${values}`],
     [/^What is the place value of the digit (.+) in (.+)\?$/i, (_, digit, number) => `${number}లో ${digit} అంకె స్థాన విలువ ఎంత?`],
@@ -669,39 +958,299 @@ export function translateSubject(value, locale = DEFAULT_LOCALE) {
 export function translateAcademicText(value, locale = DEFAULT_LOCALE) {
   if (locale === "en" || value == null) return value == null ? "" : String(value);
   const original = String(value);
-  const exact = EXACT_TEXT[locale]?.[original];
-  if (exact) return exact;
+  const exact = EXACT_TEXT[locale]?.[original] || ACADEMIC_LABELS[locale]?.[original];
+  if (exact) return translateProperNames(exact, locale);
   for (const [pattern, render] of STEM_RULES[locale] || []) {
     const match = original.match(pattern);
-    if (match) return render(...match);
+    if (match) return translateProperNames(render(...match), locale);
   }
   let translated = original;
-  for (const [source, target] of PHRASES[locale] || []) translated = translated.replaceAll(source, target);
-  return EXACT_TEXT[locale]?.[translated] || translated;
+  for (const [source, target] of PHRASES[locale] || []) {
+    const escaped = source.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const leftBoundary = /^[A-Za-z0-9]/.test(source) ? "(?<![A-Za-z])" : "";
+    const rightBoundary = /[A-Za-z0-9]$/.test(source) ? "(?![A-Za-z])" : "";
+    translated = translated.replace(new RegExp(`${leftBoundary}${escaped}${rightBoundary}`, "g"), target);
+  }
+  return translateProperNames(EXACT_TEXT[locale]?.[translated] || ACADEMIC_LABELS[locale]?.[translated] || translated, locale);
 }
 
 export function isRetainedLanguageSubject(question) {
   return ["Language", "English"].includes(question?.subject);
 }
 
+const ENGLISH_GRAMMAR_WORDS = new Set([
+  "a", "an", "the", "and", "or", "but", "both", "each", "every", "all", "one", "two",
+  "is", "are", "was", "were", "be", "been", "has", "have", "had", "does", "do", "did",
+  "what", "which", "who", "why", "how", "when", "where", "whose", "in", "on", "at", "to",
+  "from", "of", "for", "with", "without", "into", "below", "above", "before", "after", "between",
+  "while", "then", "than", "that", "this", "these", "those", "select", "choose", "find", "complete",
+  "correct", "incorrect", "option", "answer", "figure", "pattern", "card", "rule", "next", "follows",
+  "follow", "contains", "shows", "number", "value", "angle", "area", "perimeter", "volume", "side",
+  "sides", "long", "many", "more", "remain", "needed", "altogether", "called", "best", "statement",
+]);
+
+export function containsEnglishGrammar(value) {
+  return (String(value || "").match(/[A-Za-z]+/g) || []).some((word) => word.length > 1 && word !== word.toUpperCase() && ENGLISH_GRAMMAR_WORDS.has(word.toLowerCase()));
+}
+
+const ALLOWED_LATIN_UNITS = new Set(["cm", "ml", "km", "kg"]);
+
+export function containsUntranslatedLatin(value) {
+  return (String(value || "").match(/[A-Za-z]+/g) || []).some(
+    (word) => word.length > 1 && word !== word.toUpperCase() && !ALLOWED_LATIN_UNITS.has(word.toLowerCase()),
+  );
+}
+
+const GENERIC_EXPLANATION = {
+  hi: "सही उत्तर प्रश्न में दिए गए नियम, गणना या सत्यापित तथ्य के अनुसार है।",
+  te: "సరైన సమాధానం ప్రశ్నలో ఇచ్చిన నియమం, గణన లేదా ధృవీకరించిన వాస్తవం ప్రకారం ఉంది.",
+};
+
+const EVS_LOCALIZED_STEMS = {
+  Transportation: ["रेल की पटरियों पर चलने के लिए कौन-सा वाहन बनाया गया है?", "రైల్వే పట్టాలపై ప్రయాణించడానికి రూపొందించిన వాహనం ఏది?"],
+  Rivers: ["नदी को प्रदूषण से बचाने का सर्वोत्तम उपाय कौन-सा है?", "నదిని కాలుష్యం నుంచి కాపాడే ఉత్తమ చర్య ఏది?"],
+  Mountains: ["ऊँचे पर्वतीय स्थान पर हवा सामान्यतः ठंडी क्यों होती है?", "ఎత్తైన పర్వత ప్రాంతంలో గాలి సాధారణంగా చల్లగా ఎందుకు ఉంటుంది?"],
+  Plants: ["पौधे का कौन-सा भाग मिट्टी से पानी और खनिज मुख्य रूप से अवशोषित करता है?", "మొక్కలోని ఏ భాగం నేల నుంచి నీరు, ఖనిజాలను ప్రధానంగా గ్రహిస్తుంది?"],
+  "Animals on Land and in Water": ["कौन-सा जीव प्राकृतिक रूप से भूमि और जल दोनों में रह सकता है?", "భూమిపై, నీటిలో సహజంగా జీవించగల జంతువు ఏది?"],
+  "Natural Disasters": ["भूकंप के समय घर के अंदर सबसे सुरक्षित तात्कालिक कार्रवाई क्या है?", "భూకంప సమయంలో ఇంటిలో వెంటనే చేయాల్సిన అత్యంత సురక్షిత చర్య ఏది?"],
+  "Houses and Shelters": ["बार-बार बाढ़ आने वाले क्षेत्र के लिए कौन-सा घर सबसे उपयुक्त है?", "తరచుగా వరదలు వచ్చే ప్రాంతానికి ఏ ఇల్లు అత్యంత అనుకూలం?"],
+  "Water Cycle": ["जलवाष्प के छोटी तरल बूँदों में बदलने की प्रक्रिया क्या कहलाती है?", "నీటి ఆవిరి చిన్న ద్రవ బిందువులుగా మారే ప్రక్రియను ఏమంటారు?"],
+  "Food and Nutrients": ["शरीर की वृद्धि और ऊतकों की मरम्मत में मुख्य रूप से कौन-सा पोषक तत्व सहायक है?", "శరీర పెరుగుదల, కణజాల మరమ్మతుకు ప్రధానంగా సహాయపడే పోషకం ఏది?"],
+  "Hygiene and Cleanliness": ["खाने से पहले कीटाणुओं का प्रसार रोकने की सबसे अच्छी आदत कौन-सी है?", "తినే ముందు క్రిముల వ్యాప్తిని తగ్గించే ఉత్తమ అలవాటు ఏది?"],
+  "Super Senses": ["अलग-अलग गंध पहचानने में कौन-सा ज्ञानेंद्रिय सहायक है?", "వేర్వేరు వాసనలను గుర్తించడానికి సహాయపడే జ్ఞానేంద్రియం ఏది?"],
+  "Digestive System": ["पाचन किस अंग में शुरू होता है?", "జీర్ణక్రియ ఏ అవయవంలో ప్రారంభమవుతుంది?"],
+  "Circulatory System": ["शरीर में रक्त पंप करने वाला अंग कौन-सा है?", "శరీరమంతా రక్తాన్ని పంపే అవయవం ఏది?"],
+  "Respiratory System": ["साँस में ली गई हवा से ऑक्सीजन कौन-से अंग लेते हैं?", "పీల్చిన గాలి నుంచి ఆక్సిజన్ తీసుకునే అవయవాలు ఏవి?"],
+  "Food Preservation": ["नियंत्रित रूप से गर्म और ठंडा करके दूध सुरक्षित रखने की प्रक्रिया कौन-सी है?", "నియంత్రిత వేడి, చల్లబరచడం ద్వారా పాలను నిల్వ చేసే ప్రక్రియ ఏది?"],
+  "Water Pollution": ["जल प्रदूषण का प्रत्यक्ष कारण कौन-सी गतिविधि है?", "నీటి కాలుష్యానికి ప్రత్యక్ష కారణమైన చర్య ఏది?"],
+  "Air Pollution": ["व्यस्त नगर में वायु प्रदूषण कम करने वाला विकल्प कौन-सा है?", "రద్దీ పట్టణంలో వాయు కాలుష్యాన్ని తగ్గించే ఎంపిక ఏది?"],
+  "Conservation of Water": ["घर में सबसे अधिक पानी बचाने वाली कार्रवाई कौन-सी है?", "ఇంటిలో అత్యధిక నీటిని ఆదా చేసే చర్య ఏది?"],
+  "Conservation of Soil": ["पेड़ों की जड़ें मिट्टी संरक्षण में कैसे सहायता करती हैं?", "చెట్ల వేర్లు నేల సంరక్షణకు ఎలా సహాయపడతాయి?"],
+  "Superlatives of India": ["क्षेत्रफल के अनुसार भारत का सबसे बड़ा राज्य कौन-सा है?", "విస్తీర్ణం ప్రకారం భారతదేశంలో అతిపెద్ద రాష్ట్రం ఏది?"],
+  "States and Capitals": ["राजस्थान की राजधानी क्या है?", "రాజస్థాన్ రాజధాని ఏది?"],
+  "National Symbols": ["भारत का राष्ट्रीय पशु कौन-सा है?", "భారతదేశ జాతీయ జంతువు ఏది?"],
+  Landscapes: ["भूमि का चौड़ा और अधिकांशतः समतल भू-भाग कौन-सा है?", "విశాలంగా, ఎక్కువగా సమతలంగా ఉండే భూభాగం ఏది?"],
+  Festivals: ["रोशनी का त्योहार किस उत्सव को कहा जाता है?", "దీపాల పండుగగా ప్రసిద్ధి చెందిన వేడుక ఏది?"],
+  Seasons: ["भारत के अधिकांश भाग में व्यापक वर्षा लाने वाला मौसम कौन-सा है?", "భారతదేశంలోని చాలా ప్రాంతాలకు విస్తృత వర్షాలు తెచ్చే ఋతువు ఏది?"],
+  Forests: ["वन जंगली जानवरों के लिए महत्वपूर्ण क्यों हैं?", "అడవులు వన్యప్రాణులకు ఎందుకు ముఖ్యమైనవి?"],
+  Crops: ["खड़े पानी वाले खेतों में सामान्यतः कौन-सी फसल उगाई जाती है?", "నీరు నిలిచే పొలాల్లో సాధారణంగా పండించే పంట ఏది?"],
+  "Clothes and Fibres": ["पौधे से प्राप्त होने वाला प्राकृतिक रेशा कौन-सा है?", "మొక్క నుంచి లభించే సహజ నారు ఏది?"],
+};
+
+const EVS_PASSAGE_INTRO = {
+  hi: "पर्यावरण अध्ययन के सत्यापित तथ्य के आधार पर सही उत्तर चुनिए।",
+  te: "పర్యావరణ అధ్యయనంలో ధృవీకరించిన వాస్తవం ఆధారంగా సరైన సమాధానాన్ని ఎంచుకోండి.",
+};
+
+const LANGUAGE_FIXED = {
+  hi: {
+    "What did the eco-club replace?": "पर्यावरण क्लब ने क्या बदला?",
+    "What does “carefully” mean as used in the passage?": "गद्यांश में प्रयुक्त ‘सावधानी से’ का क्या अर्थ है?",
+    "Why did the storage tank last longer?": "भंडारण टंकी का पानी अधिक समय तक क्यों चला?",
+    "What happened after the washers and reminders were added?": "वॉशर बदलने और स्मरण-पट्ट लगाने के बाद क्या हुआ?",
+    "Which title best matches the passage?": "गद्यांश के लिए सबसे उपयुक्त शीर्षक कौन-सा है?",
+    "What did each child share?": "प्रत्येक बच्चे ने क्या साझा किया?",
+    "What does “volunteered” mean as used in the passage?": "गद्यांश में प्रयुक्त ‘स्वेच्छा से आगे आए’ का क्या अर्थ है?",
+    "What can be inferred about the reading circle?": "पठन मंडली के बारे में क्या निष्कर्ष निकाला जा सकता है?",
+    "What changed by the fourth meeting?": "चौथी बैठक तक क्या परिवर्तन हुआ?",
+    "Which cup received sunlight but no water?": "किस कप को धूप मिली लेकिन पानी नहीं मिला?",
+    "What does “observed” mean as used in the passage?": "गद्यांश में प्रयुक्त ‘अवलोकन किया’ का क्या अर्थ है?",
+    "Why were the cups kept in fixed positions?": "कपों को निश्चित स्थानों पर क्यों रखा गया?",
+    "What allowed healthy green seedlings to grow?": "स्वस्थ हरे पौधे किस कारण उगे?",
+    "Where did the family wait?": "परिवार ने कहाँ प्रतीक्षा की?",
+    "What does “sturdy” mean as used in the passage?": "गद्यांश में प्रयुक्त ‘मज़बूत’ का क्या अर्थ है?",
+    "Why did the family avoid the isolated tree?": "परिवार अकेले खड़े पेड़ से दूर क्यों रहा?",
+    "What did the family do after the storm passed?": "तूफ़ान थमने के बाद परिवार ने क्या किया?",
+    "Which statement best expresses the passage’s main idea?": "कौन-सा कथन गद्यांश के मुख्य विचार को सबसे अच्छी तरह व्यक्त करता है?",
+    "Which conclusion is best supported by the whole passage?": "पूरे गद्यांश से कौन-सा निष्कर्ष सबसे अधिक समर्थित है?",
+    "Garden plants": "बगीचे के पौधे", "The storage tank": "भंडारण टंकी", "Two worn washers": "दो घिसे हुए वॉशर", "Water bottles": "पानी की बोतलें",
+    "moved without purpose": "बिना उद्देश्य चले", "hidden from view": "दृष्टि से छिपा", "made very noisy": "बहुत शोर किया", "with attention": "ध्यानपूर्वक",
+    "Less water was being wasted": "कम पानी व्यर्थ हो रहा था", "It rained every day": "हर दिन वर्षा हुई", "The garden was closed": "बगीचा बंद था", "The tank became larger": "टंकी बड़ी हो गई",
+    "The caretaker left": "देखभालकर्ता चला गया", "The tank lasted longer": "टंकी का पानी अधिक समय चला", "All taps were removed": "सभी नल हटा दिए गए", "The garden flooded": "बगीचे में बाढ़ आ गई",
+    "Why rules should never change": "नियम कभी क्यों नहीं बदलने चाहिए", "Saving Water Together": "मिलकर पानी बचाना", "Small repairs can conserve water": "छोटी मरम्मत से पानी बच सकता है", "A problem with no possible solution": "ऐसी समस्या जिसका कोई समाधान नहीं",
+    "A packed lunch": "पैक किया भोजन", "A drawing tool": "चित्र बनाने का उपकरण", "A library key": "पुस्तकालय की चाबी", "A new word": "एक नया शब्द", "offered willingly": "स्वेच्छा से आगे आए",
+    "It made the library smaller": "इससे पुस्तकालय छोटा हो गया", "It was only for adults": "यह केवल वयस्कों के लिए था", "It increased the children's confidence": "इससे बच्चों का आत्मविश्वास बढ़ा", "It stopped children borrowing books": "इससे बच्चों ने पुस्तकें लेना बंद कर दिया",
+    "Books were no longer used": "पुस्तकों का उपयोग बंद हो गया", "The library closed": "पुस्तकालय बंद हो गया", "Quiet readers began speaking": "शांत पाठक बोलने लगे", "Saturday meetings ended": "शनिवार की बैठकें समाप्त हो गईं",
+    "Reading together builds confidence": "साथ पढ़ने से आत्मविश्वास बढ़ता है", "The Saturday Reading Circle": "शनिवार की पठन मंडली",
+    "Cup A": "कप A", "Every cup": "हर कप", "Cup C": "कप C", "Cup B": "कप B", "watched and noted": "देखा और दर्ज किया",
+    "To hide the labels": "लेबल छिपाने के लिए", "To warm the classroom": "कक्षा गर्म करने के लिए", "To make the comparison fair": "तुलना निष्पक्ष रखने के लिए", "To stop all growth": "सारी वृद्धि रोकने के लिए",
+    "Suitable water and light conditions": "पानी और प्रकाश की उपयुक्त परिस्थितियाँ", "A dark box alone": "केवल अँधेरा डिब्बा", "Dry soil alone": "केवल सूखी मिट्टी", "A missing label": "गायब लेबल",
+    "A Seed Experiment": "बीज का प्रयोग", "Seeds need suitable conditions to grow": "बीजों को बढ़ने के लिए उपयुक्त परिस्थितियाँ चाहिए",
+    "In the open field": "खुले मैदान में", "Under an isolated tree": "अकेले खड़े पेड़ के नीचे", "Inside a sturdy building": "मज़बूत भवन के अंदर", "Beside a metal fence": "धातु की बाड़ के पास", "strong and firm": "मज़बूत और स्थिर",
+    "It was unsafe during lightning": "बिजली चमकते समय वह असुरक्षित था", "It was too short": "वह बहुत छोटा था", "They wanted to buy fruit": "वे फल खरीदना चाहते थे", "It had no leaves": "उस पर पत्तियाँ नहीं थीं",
+    "Returned to the open field": "खुले मैदान में लौट गए", "Stayed outside all night": "पूरी रात बाहर रहे", "Climbed the tree": "पेड़ पर चढ़ गए", "Continued home together": "साथ घर की ओर चल पड़े",
+    "Safe Shelter from a Storm": "तूफ़ान से सुरक्षित आश्रय", "Seek safe shelter during a storm": "तूफ़ान में सुरक्षित आश्रय लें",
+  },
+  te: {
+    "What did the eco-club replace?": "పర్యావరణ సంఘం దేనిని మార్చింది?",
+    "What does “carefully” mean as used in the passage?": "గద్యభాగంలో ఉపయోగించిన ‘జాగ్రత్తగా’ అనే పదానికి అర్థం ఏమిటి?",
+    "Why did the storage tank last longer?": "నిల్వ ట్యాంకులోని నీరు ఎక్కువ కాలం ఎందుకు నిలిచింది?",
+    "What happened after the washers and reminders were added?": "వాషర్లు మార్చి, గుర్తు పలకలు పెట్టిన తరువాత ఏమైంది?",
+    "Which title best matches the passage?": "గద్యభాగానికి సరైన శీర్షిక ఏది?",
+    "What did each child share?": "ప్రతి చిన్నారి ఏమి పంచుకున్నారు?",
+    "What does “volunteered” mean as used in the passage?": "గద్యభాగంలో ఉపయోగించిన ‘స్వచ్ఛందంగా ముందుకొచ్చారు’ అనే మాటకు అర్థం ఏమిటి?",
+    "What can be inferred about the reading circle?": "పఠన వలయం గురించి ఏ నిర్ధారణకు రావచ్చు?",
+    "What changed by the fourth meeting?": "నాలుగో సమావేశం నాటికి ఏమి మారింది?",
+    "Which cup received sunlight but no water?": "ఏ కప్పుకు సూర్యకాంతి లభించి, నీరు లభించలేదు?",
+    "What does “observed” mean as used in the passage?": "గద్యభాగంలో ఉపయోగించిన ‘పరిశీలించారు’ అనే పదానికి అర్థం ఏమిటి?",
+    "Why were the cups kept in fixed positions?": "కప్పులను స్థిర స్థానాల్లో ఎందుకు ఉంచారు?",
+    "What allowed healthy green seedlings to grow?": "ఆరోగ్యకరమైన పచ్చ మొలకలు పెరగడానికి కారణం ఏమిటి?",
+    "Where did the family wait?": "కుటుంబం ఎక్కడ వేచి ఉంది?",
+    "What does “sturdy” mean as used in the passage?": "గద్యభాగంలో ఉపయోగించిన ‘దృఢమైన’ అనే పదానికి అర్థం ఏమిటి?",
+    "Why did the family avoid the isolated tree?": "కుటుంబం ఒంటరిగా ఉన్న చెట్టుకు ఎందుకు దూరంగా ఉంది?",
+    "What did the family do after the storm passed?": "తుఫాను తగ్గిన తరువాత కుటుంబం ఏమి చేసింది?",
+    "Which statement best expresses the passage’s main idea?": "గద్యభాగపు ప్రధాన భావాన్ని బాగా తెలిపే వాక్యం ఏది?",
+    "Which conclusion is best supported by the whole passage?": "మొత్తం గద్యభాగం బలపరిచే ఉత్తమ నిర్ధారణ ఏది?",
+    "Garden plants": "తోట మొక్కలు", "The storage tank": "నిల్వ ట్యాంకు", "Two worn washers": "అరిగిన రెండు వాషర్లు", "Water bottles": "నీటి సీసాలు",
+    "moved without purpose": "లక్ష్యం లేకుండా కదిలారు", "hidden from view": "కంటికి కనిపించకుండా దాగింది", "made very noisy": "చాలా శబ్దం చేశారు", "with attention": "శ్రద్ధతో",
+    "Less water was being wasted": "తక్కువ నీరు వృథా అయింది", "It rained every day": "ప్రతిరోజూ వర్షం పడింది", "The garden was closed": "తోట మూసివేశారు", "The tank became larger": "ట్యాంకు పెద్దదైంది",
+    "The caretaker left": "సంరక్షకుడు వెళ్లిపోయారు", "The tank lasted longer": "ట్యాంకులోని నీరు ఎక్కువ కాలం నిలిచింది", "All taps were removed": "అన్ని కుళాయిలను తొలగించారు", "The garden flooded": "తోట మునిగిపోయింది",
+    "Why rules should never change": "నియమాలు ఎందుకు ఎప్పటికీ మారకూడదు", "Saving Water Together": "కలిసి నీటిని ఆదా చేయడం", "Small repairs can conserve water": "చిన్న మరమ్మతులతో నీటిని ఆదా చేయవచ్చు", "A problem with no possible solution": "పరిష్కారం లేని సమస్య",
+    "A packed lunch": "ప్యాక్ చేసిన భోజనం", "A drawing tool": "చిత్రలేఖన పరికరం", "A library key": "గ్రంథాలయ తాళం చెవి", "A new word": "ఒక కొత్త పదం", "offered willingly": "స్వచ్ఛందంగా ముందుకొచ్చారు",
+    "It made the library smaller": "దానివల్ల గ్రంథాలయం చిన్నదైంది", "It was only for adults": "అది పెద్దలకు మాత్రమే", "It increased the children's confidence": "దానివల్ల పిల్లల ఆత్మవిశ్వాసం పెరిగింది", "It stopped children borrowing books": "దానివల్ల పిల్లలు పుస్తకాలు తీసుకోవడం ఆపారు",
+    "Books were no longer used": "పుస్తకాలను ఇక ఉపయోగించలేదు", "The library closed": "గ్రంథాలయం మూసివేశారు", "Quiet readers began speaking": "మౌనంగా ఉండే పాఠకులు మాట్లాడటం ప్రారంభించారు", "Saturday meetings ended": "శనివారం సమావేశాలు ముగిశాయి",
+    "Reading together builds confidence": "కలిసి చదవడం ఆత్మవిశ్వాసాన్ని పెంచుతుంది", "The Saturday Reading Circle": "శనివారం పఠన వలయం",
+    "Cup A": "కప్పు A", "Every cup": "ప్రతి కప్పు", "Cup C": "కప్పు C", "Cup B": "కప్పు B", "watched and noted": "చూసి నమోదు చేశారు",
+    "To hide the labels": "లేబుళ్లను దాచడానికి", "To warm the classroom": "తరగతి గదిని వేడిచేయడానికి", "To make the comparison fair": "పోలిక నిష్పక్షపాతంగా ఉండటానికి", "To stop all growth": "మొత్తం పెరుగుదలను ఆపడానికి",
+    "Suitable water and light conditions": "తగిన నీరు, వెలుతురు పరిస్థితులు", "A dark box alone": "చీకటి పెట్టె మాత్రమే", "Dry soil alone": "పొడి మట్టి మాత్రమే", "A missing label": "కనిపించని లేబుల్",
+    "A Seed Experiment": "విత్తన ప్రయోగం", "Seeds need suitable conditions to grow": "విత్తనాలు పెరగడానికి తగిన పరిస్థితులు అవసరం",
+    "In the open field": "బహిరంగ మైదానంలో", "Under an isolated tree": "ఒంటరి చెట్టు కింద", "Inside a sturdy building": "దృఢమైన భవనం లోపల", "Beside a metal fence": "లోహ కంచె పక్కన", "strong and firm": "బలమైన మరియు దృఢమైన",
+    "It was unsafe during lightning": "మెరుపు సమయంలో అది సురక్షితం కాదు", "It was too short": "అది చాలా పొట్టిగా ఉంది", "They wanted to buy fruit": "వారు పండ్లు కొనాలనుకున్నారు", "It had no leaves": "దానికి ఆకులు లేవు",
+    "Returned to the open field": "బహిరంగ మైదానానికి తిరిగివెళ్లారు", "Stayed outside all night": "రాత్రంతా బయటే ఉన్నారు", "Climbed the tree": "చెట్టు ఎక్కారు", "Continued home together": "అందరూ కలిసి ఇంటికి వెళ్లారు",
+    "Safe Shelter from a Storm": "తుఫాను నుంచి సురక్షిత ఆశ్రయం", "Seek safe shelter during a storm": "తుఫాను సమయంలో సురక్షిత ఆశ్రయం పొందండి",
+  },
+};
+
+const LANGUAGE_RULES = {
+  hi: [
+    [/^(.+) noticed that several taps in the (village|school|neighbourhood|hill town) garden dripped after closing time\. With the caretaker's permission, the eco-club measured the wasted water for (\d+) minutes and replaced two worn washers\. The club also placed a reminder beside each tap\. A week later, the storage tank lasted longer each day\.$/, (_, name, setting, count) => `${name} ने देखा कि ${translateAcademicText(setting, "hi")} के बगीचे में कई नल बंद होने के बाद भी टपक रहे थे। देखभालकर्ता की अनुमति से पर्यावरण क्लब ने ${count} मिनट तक व्यर्थ बहते पानी को मापा और दो घिसे वॉशर बदले। क्लब ने हर नल के पास स्मरण-पट्ट भी लगाया। एक सप्ताह बाद टंकी का पानी हर दिन अधिक समय तक चलने लगा।`],
+    [/^Every Saturday, (.+) helped arrange a reading circle in the (village|school|neighbourhood|hill town) library\. Each child selected one book, read with a partner for (\d+) minutes, and shared a new word\. At first, only a few children spoke\. By the fourth meeting, even quiet readers volunteered to describe their favourite scenes\.$/, (_, name, setting, count) => `हर शनिवार ${name} ने ${translateAcademicText(setting, "hi")} के पुस्तकालय में पठन मंडली आयोजित करने में सहायता की। प्रत्येक बच्चे ने एक पुस्तक चुनी, साथी के साथ ${count} मिनट पढ़ा और एक नया शब्द साझा किया। आरंभ में केवल कुछ बच्चे बोले। चौथी बैठक तक शांत पाठक भी अपने पसंदीदा दृश्यों का वर्णन करने के लिए स्वेच्छा से आगे आए।`],
+    [/^(.+)'s class placed equal bean seeds in three labelled cups\. Cup A received water and sunlight, Cup B received sunlight but no water, and Cup C received water but stayed in a dark box\. For (\d+) days, the class observed the cups without changing their positions\. Only the seeds with suitable conditions grew into healthy green seedlings\.$/, (_, name, count) => `${name} की कक्षा ने तीन लेबल लगे कपों में बराबर सेम के बीज रखे। कप A को पानी और धूप मिली, कप B को धूप मिली पर पानी नहीं, और कप C को पानी मिला पर उसे अँधेरे डिब्बे में रखा गया। कक्षा ने ${count} दिनों तक कपों की जगह बदले बिना उनका अवलोकन किया। केवल उपयुक्त परिस्थितियों वाले बीज स्वस्थ हरे पौधों में बढ़े।`],
+    [/^Dark clouds gathered while (.+)'s family was returning through the (village|school|neighbourhood|hill town) after buying (\d+) items\. They heard thunder and moved away from an open field and a tall isolated tree\. The family waited inside a sturdy building until the storm passed, then continued home together\.$/, (_, name, setting, count) => `${name} का परिवार ${translateAcademicText(setting, "hi")} से ${count} वस्तुएँ खरीदकर लौट रहा था, तभी काले बादल घिर आए। उन्होंने गरज सुनी और खुले मैदान तथा अकेले ऊँचे पेड़ से दूर चले गए। परिवार ने तूफ़ान थमने तक एक मज़बूत भवन में प्रतीक्षा की और फिर साथ घर की ओर चल पड़ा।`],
+    [/^(.+) visited the school (.+) before assembly and arranged (\d+) (.+)\. After checking every item, (.+) returned them to the teacher\.$/, (_, name, place, count, objects) => `${name} प्रार्थना सभा से पहले विद्यालय के ${translateAcademicText(place, "hi")} में गए और ${count} ${translateAcademicText(objects, "hi")} व्यवस्थित किए। हर वस्तु जाँचने के बाद ${name} ने उन्हें शिक्षक को लौटा दिया।`],
+    [/^What did (.+) arrange before assembly\?$/, (_, name) => `${name} ने प्रार्थना सभा से पहले क्या व्यवस्थित किया?`],
+    [/^(\d+) (.+)$/, (_, count, item) => `${count} ${translateAcademicText(item, "hi")}`],
+    [/^Choose the correct article: “(.+) carried ___ (.+) to the (.+)\.”$/, (_, name, object, place) => `रिक्त स्थान के लिए सही उपपद चुनिए: “${name} ${translateAcademicText(object, "hi")} लेकर ${translateAcademicText(place, "hi")} गए।”`],
+    [/^Choose the correct preposition: “The chart prepared by (.+) is ___ the wall near the (.+)\.”$/, (_, name, place) => `सही संबंधबोधक चुनिए: “${name} द्वारा बनाया गया चार्ट ${translateAcademicText(place, "hi")} के पास दीवार ___ है।”`],
+    [/^Choose the correct verb: “Every morning, (.+) ___ the (.+) in the (.+)\.”$/, (_, name, activity, place) => `सही क्रिया चुनिए: “हर सुबह ${name} ${translateAcademicText(place, "hi")} में ${translateAcademicText(activity, "hi")} की ___।”`],
+    [/^Choose the correctly spelled word for (.+)'s (.+) notice\.$/, (_, name, place) => `${name} के ${translateAcademicText(place, "hi")} सूचना-पट्ट के लिए शुद्ध वर्तनी वाला शब्द चुनिए।`],
+    [/^Choose the correctly ordered sentence about (.+) and the (.+)\.$/, (_, name, place) => `${name} और ${translateAcademicText(place, "hi")} के बारे में सही शब्द-क्रम वाला वाक्य चुनिए।`],
+    [/^(.+) quietly opened the (.+)\.$/, (_, name, place) => `${name} ने चुपचाप ${translateAcademicText(place, "hi")} खोला।`],
+    [/^Quietly (.+) the (.+) opened\.$/, (_, name, place) => `चुपचाप ${name} ${translateAcademicText(place, "hi")} खोला।`],
+    [/^Opened the quietly (.+) (.+)\.$/, (_, place, name) => `खोला चुपचाप ${translateAcademicText(place, "hi")} ${name} ने।`],
+    [/^The opened (.+) quietly (.+)\.$/, (_, name, place) => `को खोला ${name} चुपचाप ${translateAcademicText(place, "hi")}।`],
+    [/^Choose the (synonym|antonym) of “(.+)” in (.+)'s (.+) exercise\.$/, (_, kind, word, name, place) => `${name} के ${translateAcademicText(place, "hi")} अभ्यास में “${translateAcademicText(word, "hi")}” का सही ${kind === "synonym" ? "पर्यायवाची" : "विलोम"} चुनिए।`],
+    [/^Complete the question tag: “The team led by (.+) is visiting the (.+), ___\?”$/, (_, name, place) => `प्रश्न-पुच्छ पूरा कीजिए: “${name} के नेतृत्व वाली टीम ${translateAcademicText(place, "hi")} जा रही है, ___?”`],
+    [/^Choose the interjection: “___! (.+) completed the (.+) project\.”$/, (_, name, place) => `विस्मयादिबोधक चुनिए: “___! ${name} ने ${translateAcademicText(place, "hi")} की परियोजना पूरी कर ली।”`],
+    [/^Choose the adjective: “(.+) carried a bright poster into the (.+)\.”$/, (_, name, place) => `विशेषण चुनिए: “${name} एक चमकीला पोस्टर ${translateAcademicText(place, "hi")} में ले गए।”`],
+    [/^Which word best completes the sentence: “(.+) arranged the books ___ in the (.+)”\?$/, (_, name, place) => `वाक्य को सबसे अच्छी तरह पूरा करने वाला शब्द चुनिए: “${name} ने ${translateAcademicText(place, "hi")} में पुस्तकें ___ व्यवस्थित कीं।”`],
+    [/^Choose the collective noun for a group of birds in (.+)'s (.+) worksheet\.$/, (_, name, place) => `${name} की ${translateAcademicText(place, "hi")} कार्यपत्रिका में पक्षियों के समूह के लिए समूहवाचक संज्ञा चुनिए।`],
+    [/^Which word is the pronoun in “(.+) said, ‘I will visit the (.+)’”\?$/, (_, name, place) => `“${name} ने कहा, ‘मैं ${translateAcademicText(place, "hi")} जाऊँगा’” में सर्वनाम कौन-सा है?`],
+    [/^Which word is the proper noun in “(.+) visited the (.+) on Monday”\?$/, (_, name, place) => `“${name} सोमवार को ${translateAcademicText(place, "hi")} गए” में व्यक्तिवाचक संज्ञा कौन-सी है?`],
+    [/^Which word rhymes with “light” on (.+)'s (.+) card\?$/, (_, name, place) => `${name} के ${translateAcademicText(place, "hi")} कार्ड पर “रात” से तुक मिलाने वाला शब्द कौन-सा है?`],
+    [/^Choose the feminine gender form of “nephew” for (.+)'s (.+) worksheet\.$/, (_, name, place) => `${name} की ${translateAcademicText(place, "hi")} कार्यपत्रिका में “भतीजा” का स्त्रीलिंग रूप चुनिए।`],
+    [/^Select the correct plural of “(.+)” for (.+)'s (.+) record\.$/, (_, word, name, place) => `${name} के ${translateAcademicText(place, "hi")} अभिलेख के लिए “${translateAcademicText(word, "hi")}” का सही बहुवचन चुनिए।`],
+  ],
+  te: [
+    [/^(.+) noticed that several taps in the (village|school|neighbourhood|hill town) garden dripped after closing time\. With the caretaker's permission, the eco-club measured the wasted water for (\d+) minutes and replaced two worn washers\. The club also placed a reminder beside each tap\. A week later, the storage tank lasted longer each day\.$/, (_, name, setting, count) => `${name} ${translateAcademicText(setting, "te")} తోటలో అనేక కుళాయిలు మూసిన తరువాత కూడా కారుతున్నాయని గమనించారు. సంరక్షకుడి అనుమతితో పర్యావరణ సంఘం ${count} నిమిషాలు వృథా నీటిని కొలిచి, అరిగిన రెండు వాషర్లను మార్చింది. ప్రతి కుళాయి పక్కన గుర్తు పలకను కూడా ఉంచింది. వారం తరువాత ట్యాంకులోని నీరు ప్రతిరోజూ ఎక్కువ కాలం నిలిచింది.`],
+    [/^Every Saturday, (.+) helped arrange a reading circle in the (village|school|neighbourhood|hill town) library\. Each child selected one book, read with a partner for (\d+) minutes, and shared a new word\. At first, only a few children spoke\. By the fourth meeting, even quiet readers volunteered to describe their favourite scenes\.$/, (_, name, setting, count) => `ప్రతి శనివారం ${name} ${translateAcademicText(setting, "te")} గ్రంథాలయంలో పఠన వలయాన్ని ఏర్పాటు చేయడంలో సహాయపడ్డారు. ప్రతి చిన్నారి ఒక పుస్తకం ఎంచుకుని, భాగస్వామితో ${count} నిమిషాలు చదివి, ఒక కొత్త పదం పంచుకున్నారు. మొదట కొద్దిమంది మాత్రమే మాట్లాడారు. నాలుగో సమావేశం నాటికి మౌనంగా ఉండే పాఠకులు కూడా తమకు ఇష్టమైన దృశ్యాలను వివరించడానికి స్వచ్ఛందంగా ముందుకొచ్చారు.`],
+    [/^(.+)'s class placed equal bean seeds in three labelled cups\. Cup A received water and sunlight, Cup B received sunlight but no water, and Cup C received water but stayed in a dark box\. For (\d+) days, the class observed the cups without changing their positions\. Only the seeds with suitable conditions grew into healthy green seedlings\.$/, (_, name, count) => `${name} తరగతి మూడు లేబుల్ ఉన్న కప్పుల్లో సమాన సంఖ్యలో చిక్కుడు విత్తనాలు పెట్టింది. కప్పు Aకు నీరు, సూర్యకాంతి లభించాయి; కప్పు Bకు సూర్యకాంతి లభించి నీరు లభించలేదు; కప్పు Cకు నీరు లభించి చీకటి పెట్టెలో ఉంచారు. ${count} రోజులు వాటి స్థానాలు మార్చకుండా పరిశీలించారు. తగిన పరిస్థితులు ఉన్న విత్తనాలు మాత్రమే ఆరోగ్యకరమైన పచ్చ మొలకలుగా పెరిగాయి.`],
+    [/^Dark clouds gathered while (.+)'s family was returning through the (village|school|neighbourhood|hill town) after buying (\d+) items\. They heard thunder and moved away from an open field and a tall isolated tree\. The family waited inside a sturdy building until the storm passed, then continued home together\.$/, (_, name, setting, count) => `${name} కుటుంబం ${translateAcademicText(setting, "te")} నుంచి ${count} వస్తువులు కొనుకొని తిరిగి వస్తుండగా నల్ల మేఘాలు కమ్ముకున్నాయి. ఉరుము విని, బహిరంగ మైదానం మరియు ఒంటరిగా ఉన్న ఎత్తైన చెట్టుకు దూరంగా వెళ్లారు. తుఫాను తగ్గే వరకు దృఢమైన భవనంలో వేచి ఉండి, తరువాత అందరూ కలిసి ఇంటికి వెళ్లారు.`],
+    [/^(.+) visited the school (.+) before assembly and arranged (\d+) (.+)\. After checking every item, (.+) returned them to the teacher\.$/, (_, name, place, count, objects) => `${name} ప్రార్థనా సమావేశానికి ముందు పాఠశాల ${translateAcademicText(place, "te")}కు వెళ్లి ${count} ${translateAcademicText(objects, "te")} సర్దారు. ప్రతి వస్తువును తనిఖీ చేసిన తరువాత ${name} వాటిని ఉపాధ్యాయుడికి తిరిగి ఇచ్చారు.`],
+    [/^What did (.+) arrange before assembly\?$/, (_, name) => `${name} ప్రార్థనా సమావేశానికి ముందు ఏమి సర్దారు?`],
+    [/^(\d+) (.+)$/, (_, count, item) => `${count} ${translateAcademicText(item, "te")}`],
+    [/^Choose the correct article: “(.+) carried ___ (.+) to the (.+)\.”$/, (_, name, object, place) => `ఖాళీకి సరైన ఉపపదాన్ని ఎంచుకోండి: “${name} ${translateAcademicText(object, "te")}ను ${translateAcademicText(place, "te")}కు తీసుకెళ్లారు.”`],
+    [/^Choose the correct preposition: “The chart prepared by (.+) is ___ the wall near the (.+)\.”$/, (_, name, place) => `సరైన విభక్తి సూచకాన్ని ఎంచుకోండి: “${name} తయారు చేసిన పటం ${translateAcademicText(place, "te")} దగ్గర గోడ ___ ఉంది.”`],
+    [/^Choose the correct verb: “Every morning, (.+) ___ the (.+) in the (.+)\.”$/, (_, name, activity, place) => `సరైన క్రియను ఎంచుకోండి: “ప్రతి ఉదయం ${name} ${translateAcademicText(place, "te")}లో ${translateAcademicText(activity, "te")}ను ___.”`],
+    [/^Choose the correctly spelled word for (.+)'s (.+) notice\.$/, (_, name, place) => `${name} ${translateAcademicText(place, "te")} ప్రకటనకు సరైన వర్ణక్రమం ఉన్న పదాన్ని ఎంచుకోండి.`],
+    [/^Choose the correctly ordered sentence about (.+) and the (.+)\.$/, (_, name, place) => `${name}, ${translateAcademicText(place, "te")} గురించి సరైన పదక్రమం ఉన్న వాక్యాన్ని ఎంచుకోండి.`],
+    [/^(.+) quietly opened the (.+)\.$/, (_, name, place) => `${name} నిశ్శబ్దంగా ${translateAcademicText(place, "te")}ను తెరిచారు.`],
+    [/^Quietly (.+) the (.+) opened\.$/, (_, name, place) => `నిశ్శబ్దంగా ${name} ${translateAcademicText(place, "te")}ను తెరిచారు.`],
+    [/^Opened the quietly (.+) (.+)\.$/, (_, place, name) => `తెరిచారు నిశ్శబ్దంగా ${translateAcademicText(place, "te")}ను ${name}.`],
+    [/^The opened (.+) quietly (.+)\.$/, (_, name, place) => `ను తెరిచారు ${name} నిశ్శబ్దంగా ${translateAcademicText(place, "te")}.`],
+    [/^Choose the (synonym|antonym) of “(.+)” in (.+)'s (.+) exercise\.$/, (_, kind, word, name, place) => `${name} ${translateAcademicText(place, "te")} అభ్యాసంలో “${translateAcademicText(word, "te")}”కు సరైన ${kind === "synonym" ? "పర్యాయపదం" : "వ్యతిరేక పదం"} ఎంచుకోండి.`],
+    [/^Complete the question tag: “The team led by (.+) is visiting the (.+), ___\?”$/, (_, name, place) => `ప్రశ్నాంతాన్ని పూర్తి చేయండి: “${name} నాయకత్వంలోని బృందం ${translateAcademicText(place, "te")}కు వెళుతోంది, ___?”`],
+    [/^Choose the interjection: “___! (.+) completed the (.+) project\.”$/, (_, name, place) => `ఆశ్చర్యార్థకాన్ని ఎంచుకోండి: “___! ${name} ${translateAcademicText(place, "te")} ప్రాజెక్టును పూర్తి చేశారు.”`],
+    [/^Choose the adjective: “(.+) carried a bright poster into the (.+)\.”$/, (_, name, place) => `విశేషణాన్ని ఎంచుకోండి: “${name} ఒక ప్రకాశవంతమైన పోస్టరును ${translateAcademicText(place, "te")}లోకి తీసుకెళ్లారు.”`],
+    [/^Which word best completes the sentence: “(.+) arranged the books ___ in the (.+)”\?$/, (_, name, place) => `వాక్యాన్ని సరిగ్గా పూర్తి చేసే పదాన్ని ఎంచుకోండి: “${name} ${translateAcademicText(place, "te")}లో పుస్తకాలను ___ సర్దారు.”`],
+    [/^Choose the collective noun for a group of birds in (.+)'s (.+) worksheet\.$/, (_, name, place) => `${name} ${translateAcademicText(place, "te")} కార్యపత్రంలో పక్షుల సమూహానికి సమూహవాచక నామవాచకాన్ని ఎంచుకోండి.`],
+    [/^Which word is the pronoun in “(.+) said, ‘I will visit the (.+)’”\?$/, (_, name, place) => `“${name} ‘నేను ${translateAcademicText(place, "te")}కు వెళ్తాను’ అన్నారు” అనే వాక్యంలో సర్వనామం ఏది?`],
+    [/^Which word is the proper noun in “(.+) visited the (.+) on Monday”\?$/, (_, name, place) => `“${name} సోమవారం ${translateAcademicText(place, "te")}ను సందర్శించారు” అనే వాక్యంలో వ్యక్తివాచక నామవాచకం ఏది?`],
+    [/^Which word rhymes with “light” on (.+)'s (.+) card\?$/, (_, name, place) => `${name} ${translateAcademicText(place, "te")} కార్డులో “కలం”తో ప్రాస కలిగిన పదం ఏది?`],
+    [/^Choose the feminine gender form of “nephew” for (.+)'s (.+) worksheet\.$/, (_, name, place) => `${name} ${translateAcademicText(place, "te")} కార్యపత్రంలో “మేనల్లుడు”కు స్త్రీలింగ రూపాన్ని ఎంచుకోండి.`],
+    [/^Select the correct plural of “(.+)” for (.+)'s (.+) record\.$/, (_, word, name, place) => `${name} ${translateAcademicText(place, "te")} నమోదు కోసం “${translateAcademicText(word, "te")}”కు సరైన బహువచనాన్ని ఎంచుకోండి.`],
+  ],
+};
+
+const RHYME_OPTIONS = {
+  hi: { bright: "बात", late: "दिन", left: "घर", lot: "दूर" },
+  te: { bright: "ఫలం", late: "ఇల్లు", left: "నీరు", lot: "దూరం" },
+};
+
+function localizeLanguageText(value, locale) {
+  if (value == null) return "";
+  const original = String(value);
+  const fixed = LANGUAGE_FIXED[locale]?.[original];
+  if (fixed) return fixed;
+  for (const [pattern, render] of LANGUAGE_RULES[locale] || []) {
+    const match = original.match(pattern);
+    if (match) return translateProperNames(render(...match), locale);
+  }
+  return translateAcademicText(original, locale);
+}
+
+function localizeLanguageOption(question, value, locale) {
+  const original = String(value ?? "");
+  if (question.topic?.toLowerCase().includes("rhyming")) return RHYME_OPTIONS[locale]?.[original] || localizeLanguageText(original, locale);
+  if (/^Select the correct plural of /i.test(question.stem || question.text || "")) {
+    const incorrect = original.match(/^(leaf|knife|shelf|child|woman)(s|es|'s)$/);
+    if (incorrect) {
+      const base = localizeLanguageText(incorrect[1], locale);
+      const suffix = locale === "hi" ? { s: "—गलत रूप १", es: "—गलत रूप २", "'s": "—एकवचन संबंध" } : { s: "—తప్పు రూపం ౧", es: "—తప్పు రూపం ౨", "'s": "—ఏకవచన సంబంధం" };
+      return `${base}${suffix[incorrect[2]]}`;
+    }
+  }
+  return localizeLanguageText(original, locale);
+}
+
 export function localizeQuestion(question, locale = DEFAULT_LOCALE) {
   if (!question || locale === "en") return question;
-  const retained = isRetainedLanguageSubject(question);
-  const localize = retained ? (value) => value : (value) => translateAcademicText(value, locale);
+  const sourceLanguageSubject = isRetainedLanguageSubject(question);
+  const localize = (value) => sourceLanguageSubject ? localizeLanguageText(value, locale) : translateAcademicText(value, locale);
+  const subjectLabel = translateSubject(question.subject, locale);
+  const localizedTopic = translateAcademicText(question.topic, locale);
+  const safeLabel = (value) => {
+    const translated = localize(value);
+    return containsUntranslatedLatin(translated) ? subjectLabel : translated;
+  };
+  const localizedExplanation = localize(question.explanation);
+  const evsStem = question.subject === "Environmental Studies"
+    ? EVS_LOCALIZED_STEMS[question.topic]?.[locale === "hi" ? 0 : 1]
+    : null;
+  const localizeStimulus = (stimulus) => {
+    if (!stimulus || typeof stimulus !== "object") return stimulus;
+    return {
+      ...stimulus,
+      rows: stimulus.rows?.map((row) => Array.isArray(row) ? [localize(row[0]), ...row.slice(1)] : row),
+    };
+  };
   return {
     ...question,
-    text: localize(question.text || question.stem),
-    stem: localize(question.stem || question.text),
-    passage: localize(question.passage),
-    explanation: localize(question.explanation),
-    subjectLabel: translateSubject(question.subject, locale),
-    topicLabel: translateAcademicText(question.topic, locale),
+    text: evsStem || localize(question.text || question.stem),
+    stem: evsStem || localize(question.stem || question.text),
+    passage: evsStem && question.passage ? EVS_PASSAGE_INTRO[locale] : localize(question.passage),
+    explanation: containsUntranslatedLatin(localizedExplanation) ? GENERIC_EXPLANATION[locale] : localizedExplanation,
+    subjectLabel,
+    topicLabel: containsUntranslatedLatin(localizedTopic) ? subjectLabel : localizedTopic,
+    coverageTopics: (question.coverageTopics || []).map((item) => safeLabel(item)),
+    syllabusSubtopics: (question.syllabusSubtopics || []).map((item) => safeLabel(item)),
+    stimulus: localizeStimulus(question.stimulus),
     options: (question.options || []).map((option) => ({
       ...option,
-      label: localize(option.label ?? option.text),
-      text: localize(option.text ?? option.label),
+      label: sourceLanguageSubject ? localizeLanguageOption(question, option.label ?? option.text, locale) : localize(option.label ?? option.text),
+      text: sourceLanguageSubject ? localizeLanguageOption(question, option.text ?? option.label, locale) : localize(option.text ?? option.label),
     })),
-    localization: { locale, retainedLanguageSubject: retained },
+    localization: { locale, retainedLanguageSubject: false, sourceLanguageSubject },
   };
 }
 

@@ -1,7 +1,8 @@
 import { applyNativeCors, assertSameOrigin, readJsonBody, sendAuthError } from '../auth-service.js';
-import { createStudent, deleteStudent, listStudents, updateStudent } from '../student-service.js';
+import { createStudent, createStudents, deleteStudent, listStudents, updateStudent } from '../student-service.js';
+import { withApiObservability } from '../api-observability.js';
 
-export default async function handler(request, response) {
+async function handler(request, response) {
   response.setHeader('Cache-Control', 'no-store');
   if (applyNativeCors(request, response)) return;
   try {
@@ -10,6 +11,9 @@ export default async function handler(request, response) {
       return response.status(200).json({ students });
     }
     assertSameOrigin(request);
+    if (request.method === 'POST' && request.query?.action === 'import') {
+      return response.status(201).json({ students: await createStudents(request, await readJsonBody(request)) });
+    }
     if (request.method === 'POST') {
       const student = await createStudent(request, await readJsonBody(request));
       return response.status(201).json({ student });
@@ -27,3 +31,5 @@ export default async function handler(request, response) {
     return sendAuthError(response, error);
   }
 }
+
+export default withApiObservability('students', handler);

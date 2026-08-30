@@ -1,5 +1,6 @@
 import { ObjectId } from 'mongodb';
-import { AuthError, getTestingDatabase, sessionUser } from './auth-service.js';
+import { AuthError, getTestingDatabase, instituteIdForUser, sessionUser } from './auth-service.js';
+import { VIJETHA_COLLECTIONS } from './database-config.js';
 
 const allowedCourses = new Set(['jnvst', 'sainik', 'rms']);
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -95,36 +96,44 @@ function publicStudent(student) {
   };
 }
 
-async function ownerContext(request) {
+async function ownerContext(request, { mutate = false } = {}) {
   const user = await sessionUser(request);
   if (!user) throw new AuthError(401, 'AUTHENTICATION_REQUIRED', 'Sign in to manage students.');
-  return { user, ownerId: objectId(user.id, 'account') };
+  if (!['administrator', 'principal', 'teacher'].includes(user.role)) throw new AuthError(403, 'STAFF_ACCESS_REQUIRED', 'Only institute staff can access students.');
+  if (mutate && !['administrator', 'principal'].includes(user.role)) throw new AuthError(403, 'PRINCIPAL_REQUIRED', 'Only the principal can add, import, update, or remove students.');
+  return { user, instituteId: instituteIdForUser(user), ownerId: objectId(user.id, 'account') };
+}
+
+function instituteFilter(instituteId) {
+  return { $or: [{ instituteId }, { instituteId: { $exists: false } }] };
 }
 
 async function studentsCollection() {
   const db = await getTestingDatabase();
   if (!studentIndexPromise) {
     studentIndexPromise = Promise.all([
-      db.collection('students').createIndex({ ownerId: 1, course: 1, name: 1 }),
-      db.collection('students').createIndex({ ownerId: 1, course: 1, updatedAt: -1 })
+      db.collection(VIJETHA_COLLECTIONS.students).createIndex({ ownerId: 1, course: 1, name: 1 }),
+      db.collection(VIJETHA_COLLECTIONS.students).createIndex({ ownerId: 1, course: 1, updatedAt: -1 }),
+      db.collection(VIJETHA_COLLECTIONS.students).createIndex({ instituteId: 1, course: 1, name: 1 }),
+      db.collection(VIJETHA_COLLECTIONS.students).createIndex({ instituteId: 1, course: 1, batch: 1 })
     ]).catch((error) => {
       studentIndexPromise = null;
       throw error;
     });
   }
   await studentIndexPromise;
-  return db.collection('students');
+  return db.collection(VIJETHA_COLLECTIONS.students);
 }
 
 export async function listStudents(request, query = {}) {
-  const { ownerId } = await ownerContext(request);
+  const { instituteId } = await ownerContext(request);
   const course = String(query.course || '').toLowerCase();
   if (!allowedCourses.has(course)) throw new AuthError(400, 'INVALID_COURSE', 'Choose a valid entrance exam.');
   const search = String(query.query || '').trim().slice(0, 80);
-  const filter = { ownerId, course };
+  const filter = { course, ...instituteFilter(instituteId) };
   if (search) {
     const escaped = search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    filter.$or = ['name', 'batch', 'guardian', 'email', 'guardianEmail'].map((field) => ({ [field]: { $regex: escaped, $options: 'i' } }));
+    filter.$and = [{ $or: ['name', 'batch', 'guardian', 'email', 'guardianEmail'].map((field) => ({ [field]: { $regex: escaped, $options: 'i' } })) }];
   }
   const collection = await studentsCollection();
   const rows = await collection.find(filter).sort({ name: 1 }).limit(500).toArray();
@@ -132,22 +141,43 @@ export async function listStudents(request, query = {}) {
 }
 
 export async function createStudent(request, input) {
-  const { ownerId } = await ownerContext(request);
+  const { instituteId, ownerId } = await ownerContext(request, { mutate: true });
   const values = normalizeStudentInput(input);
   const now = new Date();
-  const document = { ...values, ownerId, createdAt: now, updatedAt: now, lastActiveAt: now };
+  const document = { ...values, instituteId, ownerId, createdAt: now, updatedAt: now, lastActiveAt: now };
   const collection = await studentsCollection();
   const result = await collection.insertOne(document);
   return publicStudent({ ...document, _id: result.insertedId });
 }
 
+export async function createStudents(request, input = {}) {
+  const { instituteId, ownerId } = await ownerContext(request, { mutate: true });
+  const rows = Array.isArray(input.students) ? input.students : [];
+  if (!rows.length || rows.length > 500) throw new AuthError(400, 'INVALID_IMPORT_SIZE', 'Import between 1 and 500 students at a time.');
+  const values = rows.map((row) => normalizeStudentInput(row));
+  const keys = values.map((row) => `${row.course}|${row.batch.toLowerCase()}|${row.name.toLowerCase()}`);
+  if (new Set(keys).size !== keys.length) throw new AuthError(409, 'DUPLICATE_IMPORT', 'The import contains duplicate student names in the same batch.');
+  const collection = await studentsCollection();
+  const existing = await collection.find({
+    $and: [
+      instituteFilter(instituteId),
+      { $or: values.map((row) => ({ course: row.course, batch: row.batch, name: { $regex: `^${row.name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, $options: 'i' } })) },
+    ],
+  }, { projection: { name: 1, batch: 1 } }).limit(500).toArray();
+  if (existing.length) throw new AuthError(409, 'STUDENT_EXISTS', `${existing[0].name} already exists in ${existing[0].batch}.`);
+  const now = new Date();
+  const documents = values.map((row) => ({ ...row, instituteId, ownerId, createdAt: now, updatedAt: now, lastActiveAt: now }));
+  const result = await collection.insertMany(documents, { ordered: true });
+  return documents.map((document, index) => publicStudent({ ...document, _id: result.insertedIds[index] }));
+}
+
 export async function updateStudent(request, id, input) {
-  const { ownerId } = await ownerContext(request);
+  const { instituteId } = await ownerContext(request, { mutate: true });
   const values = normalizeStudentInput(input, { partial: true });
   if (!Object.keys(values).length) throw new AuthError(400, 'NO_STUDENT_CHANGES', 'Provide at least one student field to update.');
   const collection = await studentsCollection();
   const result = await collection.findOneAndUpdate(
-    { _id: objectId(id), ownerId },
+    { _id: objectId(id), ...instituteFilter(instituteId) },
     { $set: { ...values, updatedAt: new Date() } },
     { returnDocument: 'after' }
   );
@@ -156,8 +186,8 @@ export async function updateStudent(request, id, input) {
 }
 
 export async function deleteStudent(request, id) {
-  const { ownerId } = await ownerContext(request);
+  const { instituteId } = await ownerContext(request, { mutate: true });
   const collection = await studentsCollection();
-  const result = await collection.deleteOne({ _id: objectId(id), ownerId });
+  const result = await collection.deleteOne({ _id: objectId(id), ...instituteFilter(instituteId) });
   if (!result.deletedCount) throw new AuthError(404, 'STUDENT_NOT_FOUND', 'The student was not found.');
 }

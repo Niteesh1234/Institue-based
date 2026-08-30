@@ -1,6 +1,7 @@
 import { MongoClient } from 'mongodb';
 import { generateEntranceBank, validateEntranceBank } from '../entrance-question-engine.js';
 import { courseCollectionNames, getExamCourse } from '../exam-courses.js';
+import { VIJETHA_DATABASE_NAME } from '../database-config.js';
 
 const mongoUri = process.env.MONGODB_URI;
 if (!mongoUri) throw new Error('MONGODB_URI is required to seed the Testing database.');
@@ -21,7 +22,7 @@ async function upsertInChunks(collection, documents, key, seededAt) {
 
 try {
   await client.connect();
-  const db = client.db('Testing');
+  const db = client.db(VIJETHA_DATABASE_NAME);
   const results = [];
   for (const courseKey of ['sainik', 'rms']) {
     const course = getExamCourse(courseKey);
@@ -58,7 +59,7 @@ try {
     if (databaseReport.status !== 'passed') throw new Error(`${course.shortName} MongoDB count audit failed.`);
     results.push({ course: course.key, generationReport, databaseReport });
   }
-  console.log(JSON.stringify({ status: 'passed', database: 'Testing', results }, null, 2));
+  console.log(JSON.stringify({ status: 'passed', database: VIJETHA_DATABASE_NAME, results }, null, 2));
 } finally {
   await client.close();
 }

@@ -1,6 +1,7 @@
 import { loadCatalog } from '../vercel-catalog.js';
+import { withApiObservability } from '../api-observability.js';
 
-export default async function handler(request, response) {
+async function handler(request, response) {
   if (request.method !== 'GET') return response.status(405).json({ error: 'Method not allowed' });
   const course = request.query.course || 'jnvst';
   const testId = request.query.id;
@@ -14,3 +15,5 @@ export default async function handler(request, response) {
     return response.status(503).json({ error: error.message });
   }
 }
+
+export default withApiObservability('full-test', handler);

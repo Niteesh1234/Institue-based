@@ -1,6 +1,8 @@
 import { createHash, randomBytes } from 'node:crypto';
 import { GridFSBucket, ObjectId } from 'mongodb';
-import { AuthError, getTestingDatabase, sessionUser } from './auth-service.js';
+import { AuthError, getTestingDatabase, instituteIdForUser, sessionUser } from './auth-service.js';
+import { VIJETHA_COLLECTIONS } from './database-config.js';
+import { loadInstitutePolicies } from './institute-control-service.js';
 
 const allowedCourses = new Set(['jnvst', 'sainik', 'rms']);
 const allowedTypes = new Set(['note', 'test']);
@@ -80,23 +82,38 @@ async function databaseResources() {
   const db = await getTestingDatabase();
   if (!resourceIndexPromise) {
     resourceIndexPromise = Promise.all([
-      db.collection('resources').createIndex({ ownerId: 1, course: 1, createdAt: -1 }),
-      db.collection('resources').createIndex({ ownerId: 1, studentIds: 1, createdAt: -1 }),
-      db.collection('students').createIndex({ resourceAccessTokenHash: 1 }, { sparse: true }),
+      db.collection(VIJETHA_COLLECTIONS.resources).createIndex({ ownerId: 1, course: 1, createdAt: -1 }),
+      db.collection(VIJETHA_COLLECTIONS.resources).createIndex({ ownerId: 1, studentIds: 1, createdAt: -1 }),
+      db.collection(VIJETHA_COLLECTIONS.resources).createIndex({ instituteId: 1, course: 1, createdAt: -1 }),
+      db.collection(VIJETHA_COLLECTIONS.resources).createIndex({ instituteId: 1, studentIds: 1, createdAt: -1 }),
+      db.collection(VIJETHA_COLLECTIONS.students).createIndex({ resourceAccessTokenHash: 1 }, { sparse: true }),
     ]).catch((error) => {
       resourceIndexPromise = null;
       throw error;
     });
   }
   await resourceIndexPromise;
-  return { db, resources: db.collection('resources'), students: db.collection('students'), files: new GridFSBucket(db, { bucketName: 'resource_files' }) };
+  return {
+    db,
+    resources: db.collection(VIJETHA_COLLECTIONS.resources),
+    students: db.collection(VIJETHA_COLLECTIONS.students),
+    files: new GridFSBucket(db, { bucketName: VIJETHA_COLLECTIONS.resourceFilesBucket }),
+  };
 }
 
 async function staffContext(request) {
   const user = await sessionUser(request);
   if (!user) throw new AuthError(401, 'AUTHENTICATION_REQUIRED', 'Sign in to manage notes and tests.');
-  if (!['administrator', 'teacher'].includes(user.role)) throw new AuthError(403, 'STAFF_ACCESS_REQUIRED', 'Only institute staff can manage resources.');
-  return { user, ownerId: objectId(user.id, 'INVALID_ACCOUNT_ID', 'The account identifier is invalid.') };
+  if (!['administrator', 'principal', 'teacher'].includes(user.role)) throw new AuthError(403, 'STAFF_ACCESS_REQUIRED', 'Only institute staff can manage resources.');
+  return { user, instituteId: instituteIdForUser(user), ownerId: objectId(user.id, 'INVALID_ACCOUNT_ID', 'The account identifier is invalid.') };
+}
+
+function instituteFilter(instituteId) {
+  return { $or: [{ instituteId }, { instituteId: { $exists: false } }] };
+}
+
+function requirePrincipal(user, message = 'Only the principal can perform this action.') {
+  if (!['administrator', 'principal'].includes(user.role)) throw new AuthError(403, 'PRINCIPAL_REQUIRED', message);
 }
 
 function publicResource(resource, studentMap = new Map()) {
@@ -116,29 +133,31 @@ function publicResource(resource, studentMap = new Map()) {
   };
 }
 
-async function assignedStudents(students, ownerId, course, studentIds) {
-  const rows = await students.find({ _id: { $in: studentIds }, ownerId, course }).project({ name: 1, batch: 1 }).toArray();
+async function assignedStudents(students, instituteId, course, studentIds) {
+  const rows = await students.find({ _id: { $in: studentIds }, course, ...instituteFilter(instituteId) }).project({ name: 1, batch: 1 }).toArray();
   if (rows.length !== studentIds.length) throw new AuthError(400, 'INVALID_ASSIGNMENT', 'Every selected student must belong to this institute and course.');
   return rows;
 }
 
 export async function listResources(request, query = {}) {
-  const { ownerId } = await staffContext(request);
+  const { instituteId } = await staffContext(request);
   const course = normalizeCourse(query.course);
   const { resources, students } = await databaseResources();
-  const rows = await resources.find({ ownerId, course }).sort({ createdAt: -1 }).limit(300).toArray();
+  const rows = await resources.find({ course, ...instituteFilter(instituteId) }).sort({ createdAt: -1 }).limit(300).toArray();
   const ids = [...new Map(rows.flatMap((row) => row.studentIds).map((id) => [String(id), id])).values()];
-  const studentRows = ids.length ? await students.find({ _id: { $in: ids }, ownerId }).project({ name: 1, batch: 1 }).toArray() : [];
+  const studentRows = ids.length ? await students.find({ _id: { $in: ids }, ...instituteFilter(instituteId) }).project({ name: 1, batch: 1 }).toArray() : [];
   const studentMap = new Map(studentRows.map((student) => [String(student._id), { id: String(student._id), name: student.name, batch: student.batch }]));
   return rows.map((resource) => publicResource(resource, studentMap));
 }
 
 export async function createResource(request, input) {
-  const { user, ownerId } = await staffContext(request);
+  const { user, instituteId, ownerId } = await staffContext(request);
   const values = normalizeResourceInput(input);
   const file = decodeResourceFile(input.file || {});
-  const { resources, students, files } = await databaseResources();
-  const assigned = await assignedStudents(students, ownerId, values.course, values.studentIds);
+  const { db, resources, students, files } = await databaseResources();
+  const policies = await loadInstitutePolicies(db, instituteId);
+  if (user.role === 'teacher' && !policies.teacherCanUploadQuestions) throw new AuthError(403, 'TEACHER_UPLOAD_DISABLED', 'The principal has disabled teacher uploads.');
+  const assigned = await assignedStudents(students, instituteId, values.course, values.studentIds);
   const now = new Date();
   const upload = files.openUploadStream(file.filename, { metadata: { ownerId, course: values.course, mimeType: file.mimeType } });
   await new Promise((resolve, reject) => {
@@ -148,6 +167,7 @@ export async function createResource(request, input) {
   });
   const document = {
     ...values,
+    instituteId,
     ownerId,
     fileId: upload.id,
     fileName: file.filename,
@@ -169,12 +189,13 @@ export async function createResource(request, input) {
 }
 
 export async function updateResource(request, id, input) {
-  const { ownerId } = await staffContext(request);
+  const { user, instituteId } = await staffContext(request);
+  requirePrincipal(user);
   const values = normalizeResourceInput(input);
   const { resources, students } = await databaseResources();
-  const assigned = await assignedStudents(students, ownerId, values.course, values.studentIds);
+  const assigned = await assignedStudents(students, instituteId, values.course, values.studentIds);
   const resource = await resources.findOneAndUpdate(
-    { _id: objectId(id, 'INVALID_RESOURCE_ID', 'The resource identifier is invalid.'), ownerId },
+    { _id: objectId(id, 'INVALID_RESOURCE_ID', 'The resource identifier is invalid.'), ...instituteFilter(instituteId) },
     { $set: { ...values, updatedAt: new Date() } },
     { returnDocument: 'after' },
   );
@@ -184,9 +205,10 @@ export async function updateResource(request, id, input) {
 }
 
 export async function deleteResource(request, id) {
-  const { ownerId } = await staffContext(request);
+  const { user, instituteId } = await staffContext(request);
+  requirePrincipal(user);
   const { resources, files } = await databaseResources();
-  const resource = await resources.findOneAndDelete({ _id: objectId(id, 'INVALID_RESOURCE_ID', 'The resource identifier is invalid.'), ownerId });
+  const resource = await resources.findOneAndDelete({ _id: objectId(id, 'INVALID_RESOURCE_ID', 'The resource identifier is invalid.'), ...instituteFilter(instituteId) });
   if (!resource) throw new AuthError(404, 'RESOURCE_NOT_FOUND', 'The resource was not found.');
   await files.delete(resource.fileId).catch((error) => {
     if (error?.code !== 'ENOENT') console.error('Resource file cleanup failed:', error);
@@ -194,19 +216,21 @@ export async function deleteResource(request, id) {
 }
 
 export async function staffResourceFile(request, id) {
-  const { ownerId } = await staffContext(request);
+  const { user, instituteId } = await staffContext(request);
+  requirePrincipal(user, 'Only the principal can download institute files.');
   const { resources, files } = await databaseResources();
-  const resource = await resources.findOne({ _id: objectId(id, 'INVALID_RESOURCE_ID', 'The resource identifier is invalid.'), ownerId });
+  const resource = await resources.findOne({ _id: objectId(id, 'INVALID_RESOURCE_ID', 'The resource identifier is invalid.'), ...instituteFilter(instituteId) });
   if (!resource) throw new AuthError(404, 'RESOURCE_NOT_FOUND', 'The resource was not found.');
   return { resource, stream: files.openDownloadStream(resource.fileId) };
 }
 
 export async function createStudentResourceAccess(request, studentId) {
-  const { ownerId } = await staffContext(request);
+  const { user, instituteId } = await staffContext(request);
+  requirePrincipal(user, 'Only the principal can create or replace student access links.');
   const { students } = await databaseResources();
   const token = randomBytes(32).toString('base64url');
   const result = await students.findOneAndUpdate(
-    { _id: objectId(studentId, 'INVALID_STUDENT_ID', 'The student identifier is invalid.'), ownerId },
+    { _id: objectId(studentId, 'INVALID_STUDENT_ID', 'The student identifier is invalid.'), ...instituteFilter(instituteId) },
     { $set: { resourceAccessTokenHash: tokenHash(token), resourceAccessUpdatedAt: new Date() } },
     { returnDocument: 'after', projection: { name: 1 } },
   );
@@ -214,19 +238,20 @@ export async function createStudentResourceAccess(request, studentId) {
   return { studentId: String(result._id), studentName: result.name, token };
 }
 
-async function studentAccess(studentId, token) {
+export async function resolveStudentAccess(studentId, token) {
   const { resources, students, files } = await databaseResources();
   const student = await students.findOne({
     _id: objectId(studentId, 'INVALID_STUDENT_ID', 'The student access link is invalid.'),
     resourceAccessTokenHash: tokenHash(token),
   });
   if (!student) throw new AuthError(403, 'INVALID_STUDENT_ACCESS', 'This student access link is invalid or has been replaced.');
+  student.instituteId = student.instituteId || 'vijetha';
   return { student, resources, files };
 }
 
 export async function listStudentResources(studentId, token) {
-  const { student, resources } = await studentAccess(studentId, token);
-  const rows = await resources.find({ ownerId: student.ownerId, course: student.course, studentIds: student._id }).sort({ createdAt: -1 }).limit(300).toArray();
+  const { student, resources } = await resolveStudentAccess(studentId, token);
+  const rows = await resources.find({ course: student.course, studentIds: student._id, ...instituteFilter(student.instituteId) }).sort({ createdAt: -1 }).limit(300).toArray();
   return {
     student: { id: String(student._id), name: student.name, course: student.course, batch: student.batch },
     resources: rows.map((resource) => publicResource(resource)),
@@ -234,15 +259,8 @@ export async function listStudentResources(studentId, token) {
 }
 
 export async function studentResourceFile(studentId, token, resourceId) {
-  const { student, resources, files } = await studentAccess(studentId, token);
-  const resource = await resources.findOne({
-    _id: objectId(resourceId, 'INVALID_RESOURCE_ID', 'The resource identifier is invalid.'),
-    ownerId: student.ownerId,
-    course: student.course,
-    studentIds: student._id,
-  });
-  if (!resource) throw new AuthError(404, 'RESOURCE_NOT_FOUND', 'This resource is not assigned to the student.');
-  return { resource, stream: files.openDownloadStream(resource.fileId) };
+  await resolveStudentAccess(studentId, token);
+  throw new AuthError(403, 'STUDENT_DOWNLOAD_DISABLED', 'Downloading is controlled by the principal administrator.');
 }
 
 export const resourceLimits = { maxFileBytes, allowedMimeTypes: [...allowedMimeTypes] };

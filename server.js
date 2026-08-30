@@ -2,7 +2,8 @@ import http from 'node:http';
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { catalogContract, deploymentMetadata, loadAggregation, loadCatalog, loadValidationReport } from './vercel-catalog.js';
+import { catalogContract, deploymentMetadata, loadAggregation, loadCatalog, loadCourseProfile, loadSyllabus, loadValidationReport } from './vercel-catalog.js';
+import { courseCollectionNames } from './exam-courses.js';
 import registerHandler from './api/auth/register.js';
 import requestOtpHandler from './api/auth/request-otp.js';
 import verifyOtpHandler from './api/auth/verify-otp.js';
@@ -71,13 +72,24 @@ const server = http.createServer(async (request, response) => {
     url.searchParams.set('tutor', '1');
     return runApiHandler(healthHandler, request, response, url);
   }
-  if (url.pathname === '/api/health') return json(response, 200, { service: 'vijetha-testing-api', database: deploymentMetadata.databaseName, moduleVersion: deploymentMetadata.moduleVersion, modules: deploymentMetadata.modules, status: deploymentMetadata.hasMongo ? 'configured' : 'preview' });
+  if (url.pathname === '/api/health') return runApiHandler(healthHandler, request, response, url);
   if (url.pathname === '/api/full-test-catalog' || url.pathname === '/api/test-catalog') {
     try {
-      const catalog = await loadCatalog({ course, refresh: url.searchParams.get('refresh') === '1', includeQuestions: false });
+      const [catalog, syllabus, courseProfile] = await Promise.all([
+        loadCatalog({ course, refresh: url.searchParams.get('refresh') === '1', includeQuestions: false }),
+        loadSyllabus(course),
+        loadCourseProfile(course),
+      ]);
       const level = url.searchParams.get('level') || 'all';
       const tests = level === 'all' ? catalog.tests : catalog.tests.filter((test) => test.level === level.toLowerCase());
-      return json(response, 200, { source: catalog.source, format: 'Validated syllabus-aligned full tests', contract: catalogContract(course), tests });
+      return json(response, 200, {
+        source: catalog.source,
+        syllabusSource: syllabus.source,
+        courseSource: courseProfile.source,
+        format: 'Validated syllabus-aligned full tests',
+        contract: catalogContract(course, syllabus.blueprint, courseProfile.profile),
+        tests,
+      });
     } catch (error) { return json(response, 503, { error: error.message }); }
   }
   if (url.pathname === '/api/full-test') {
@@ -90,7 +102,12 @@ const server = http.createServer(async (request, response) => {
     } catch (error) { return json(response, 503, { error: error.message }); }
   }
   if (url.pathname === '/api/question-aggregation') {
-    try { return json(response, 200, { source: deploymentMetadata.hasMongo ? `Testing.${course}_questions` : 'Validated in-memory preview', aggregation: await loadAggregation(course) }); }
+    try { return json(response, 200, {
+      source: deploymentMetadata.hasMongo
+        ? `${deploymentMetadata.databaseName}.${courseCollectionNames(course).questions}`
+        : 'Validated in-memory preview',
+      aggregation: await loadAggregation(course),
+    }); }
     catch (error) { return json(response, 503, { error: error.message }); }
   }
   if (url.pathname === '/api/validation-report') {

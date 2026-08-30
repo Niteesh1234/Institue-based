@@ -58,10 +58,7 @@ function BatchQuestionStimulus({ stimulus }) {
 }
 
 async function fetchSourceTest(courseKey, testId) {
-  const paths = [
-    `${import.meta.env.BASE_URL}generated/${courseKey}/tests/${encodeURIComponent(testId)}.json`,
-    `${API_BASE_URL}/api/full-test?course=${encodeURIComponent(courseKey)}&id=${encodeURIComponent(testId)}`,
-  ];
+  const paths = [`${API_BASE_URL}/api/full-test?course=${encodeURIComponent(courseKey)}&id=${encodeURIComponent(testId)}`];
   let lastError;
   for (const path of paths) {
     try {
@@ -74,7 +71,7 @@ async function fetchSourceTest(courseKey, testId) {
   throw lastError || new Error(`Could not load ${testId}.`);
 }
 
-export function BatchExamsPage({ course, batches, students, tests, user, demo }) {
+export function BatchExamsPage({ course, batches, students, tests, user, demo, canCreate = false }) {
   const [rows, setRows] = useState([]);
   const [status, setStatus] = useState('loading');
   const [error, setError] = useState('');
@@ -213,7 +210,7 @@ export function BatchExamsPage({ course, batches, students, tests, user, demo })
           <label>Batch<select required value={form.batch} onChange={(event) => setForm({ ...form, batch: event.target.value })}><option value="">Choose batch</option>{batches.map((batch) => <option key={batch.name}>{batch.name}</option>)}</select></label>
           <div className="batch-assignment-count"><Users size={16} /><span><b>{studentsInBatch.length}</b> students will receive this exam</span></div>
           <label>Start time<input type="datetime-local" value={form.startsAt} onChange={(event) => setForm({ ...form, startsAt: event.target.value })} /></label>
-          <button type="submit" className="button primary" disabled={generating || !form.batch || !studentsInBatch.length}>{generating ? <RefreshCw className="spin" size={16} /> : <ClipboardCheck size={16} />}{generating ? 'Selecting and validating 60 questions…' : 'Generate 20 / 20 / 20 exam'}</button>
+          <button type="submit" className="button primary" disabled={!canCreate || generating || !form.batch || !studentsInBatch.length}>{generating ? <RefreshCw className="spin" size={16} /> : <ClipboardCheck size={16} />}{!canCreate ? 'Creation disabled by principal' : generating ? 'Selecting and validating 60 questions…' : 'Generate 20 / 20 / 20 exam'}</button>
           <small className="batch-exam-rule-note">Every generated paper is checked for exact difficulty counts, official subject proportions, duplicate prompts, and reuse across earlier batch papers.</small>
         </form>
 

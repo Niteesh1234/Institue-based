@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   AlertCircle,
   Banknote,
@@ -11,6 +11,7 @@ import {
   Users,
 } from "lucide-react";
 import { useI18n } from "./i18n.jsx";
+import { authRequest } from "./api-client.js";
 
 const STORAGE_KEY = "vijetha-institute-control-v1";
 const LEVELS = ["Easy", "Medium", "Challenging"];
@@ -29,8 +30,10 @@ export const DEFAULT_INSTITUTE_CONTROL = {
     { id: "teacher-ravi", name: "Ravi Verma", email: "ravi@vijetha.in", status: "approved" },
     { id: "teacher-anita", name: "Anita Rao", email: "anita@vijetha.in", status: "approved" },
   ],
+  batches: [],
   exams: [],
   questionUploads: [],
+  staffAccounts: [],
   prepaidBalance: 0,
   ledger: [],
   audit: [],
@@ -51,14 +54,46 @@ function initialControlState() {
   }
 }
 
-export function useInstituteControlState() {
+export function useInstituteControlState(user = null) {
   const [control, setControlState] = useState(initialControlState);
+  const loadedUserId = useRef(null);
+  useEffect(() => {
+    if (!user) {
+      loadedUserId.current = null;
+      return undefined;
+    }
+    const controller = new AbortController();
+    authRequest('/api/health?control=1', { method: 'GET', signal: controller.signal })
+      .then((payload) => {
+        if (!payload.control) return;
+        loadedUserId.current = user.id;
+        setControlState({
+          ...DEFAULT_INSTITUTE_CONTROL,
+          ...payload.control,
+          policies: { ...DEFAULT_INSTITUTE_CONTROL.policies, ...(payload.control.policies || {}) },
+        });
+      })
+      .catch((error) => {
+        if (error.name !== 'AbortError') console.error('Institute controls could not be loaded:', error);
+      });
+    return () => controller.abort();
+  }, [user?.id]);
+
+  useEffect(() => {
+    if (!user) {
+      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(control));
+      return undefined;
+    }
+    if (loadedUserId.current !== user.id || !isPrincipalRole(user)) return undefined;
+    const timeout = window.setTimeout(() => {
+      authRequest('/api/health?control=1', { method: 'PUT', body: JSON.stringify(control) })
+        .catch((error) => console.error('Institute controls could not be saved:', error));
+    }, 250);
+    return () => window.clearTimeout(timeout);
+  }, [control, user?.id]);
+
   const setControl = (next) => {
-    setControlState((current) => {
-      const value = typeof next === "function" ? next(current) : next;
-      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(value));
-      return value;
-    });
+    setControlState((current) => (typeof next === "function" ? next(current) : next));
   };
   return [control, setControl];
 }
@@ -68,9 +103,7 @@ export function isPrincipalRole(user) {
 }
 
 export function canPrintPapers(user, control) {
-  if (isPrincipalRole(user)) return true;
-  if (user?.role === "teacher") return Boolean(control?.policies?.teacherCanPrint);
-  return Boolean(control?.policies?.studentCanPrint);
+  return isPrincipalRole(user);
 }
 
 function eventId(prefix) {
@@ -172,11 +205,11 @@ const COPY = {
   },
 };
 
-function PolicySwitch({ checked, label, detail, onChange }) {
+function PolicySwitch({ checked, label, detail, onChange, disabled = false }) {
   return (
     <label className="control-policy-row">
       <span><strong>{label}</strong><small>{detail}</small></span>
-      <input type="checkbox" checked={checked} onChange={(event) => onChange(event.target.checked)} />
+      <input type="checkbox" checked={checked} disabled={disabled} onChange={(event) => onChange(event.target.checked)} />
     </label>
   );
 }
@@ -189,6 +222,7 @@ export function PrincipalControlPage({ user, course, batches, students, control,
   const [creditAmount, setCreditAmount] = useState(1000);
   const [message, setMessage] = useState("");
   const [uploadBusy, setUploadBusy] = useState(false);
+  const [staffBusyId, setStaffBusyId] = useState("");
 
   const existingQuestionKeys = useMemo(
     () => new Set(control.questionUploads.flatMap((upload) => upload.questions || []).map((question) => normalizeStem(question.stem))),
@@ -206,6 +240,24 @@ export function PrincipalControlPage({ user, course, batches, students, control,
     (current) => ({ ...current, policies: { ...current.policies, [key]: value } }),
     `${key} changed to ${String(value)}`,
   );
+  const changeStaffStatus = async (account) => {
+    if (!principal || staffBusyId) return;
+    const action = account.status === "active" ? "suspend" : "approve";
+    setStaffBusyId(account.id);
+    setMessage("");
+    try {
+      const payload = await authRequest('/api/health?control=1&action=staff-access', {
+        method: 'PATCH',
+        body: JSON.stringify({ userId: account.id, action }),
+      });
+      setControl((current) => ({ ...current, staffAccounts: payload.staffAccounts || [] }));
+      setMessage(`${account.name} access ${action === "approve" ? "approved" : "suspended"}.`);
+    } catch (error) {
+      setMessage(error.message || "Staff access could not be updated.");
+    } finally {
+      setStaffBusyId("");
+    }
+  };
   const addCredit = (event) => {
     event.preventDefault();
     const amount = Math.round(Number(creditAmount));
@@ -268,17 +320,16 @@ export function PrincipalControlPage({ user, course, batches, students, control,
         <div className="control-two-column">
           <section className="panel control-panel">
             <div className="panel-heading"><div><p className="section-kicker">ROLE-BASED ACCESS</p><h2>Exam and document permissions</h2></div><LockKeyhole size={20} /></div>
-            <PolicySwitch checked={control.policies.teacherCanCreateExams} label="Teachers can create batch exams" detail="Every exam remains visible to the principal." onChange={(value) => setPolicy("teacherCanCreateExams", value)} />
-            <PolicySwitch checked={control.policies.teacherCanUploadQuestions} label="Teachers can upload questions" detail="Uploads are validated and can require principal approval." onChange={(value) => setPolicy("teacherCanUploadQuestions", value)} />
-            <PolicySwitch checked={control.policies.teacherCanPrint} label="Teachers can print or download" detail="Off by default; principal always retains access." onChange={(value) => setPolicy("teacherCanPrint", value)} />
-            <PolicySwitch checked={control.policies.studentCanPrint} label="Students can print or download" detail="Off by default for protected exam delivery." onChange={(value) => setPolicy("studentCanPrint", value)} />
+            <PolicySwitch disabled={!principal} checked={control.policies.teacherCanCreateExams} label="Teachers can create batch exams" detail="Every exam remains visible to the principal." onChange={(value) => setPolicy("teacherCanCreateExams", value)} />
+            <PolicySwitch disabled={!principal} checked={control.policies.teacherCanUploadQuestions} label="Teachers can upload questions" detail="Uploads are validated and remain visible to the principal." onChange={(value) => setPolicy("teacherCanUploadQuestions", value)} />
+            <div className="control-rule"><LockKeyhole size={18} /><span><strong>Printing and downloads: Principal only</strong><small>Teachers and students cannot print or download protected papers or uploaded resources.</small></span></div>
             <div className="control-rule"><ShieldCheck size={18} /><span><strong>Answer feedback: after final submission</strong><small>Students can change a selected answer before submission, but cannot see whether it is correct.</small></span></div>
           </section>
           <section className="panel control-panel">
             <div className="panel-heading"><div><p className="section-kicker">STAFF ACCESS</p><h2>Approved teachers</h2></div><Users size={20} /></div>
-            {control.teachers.map((teacher) => (
-              <div className="control-person" key={teacher.id}><span>{teacher.name.slice(0, 2).toUpperCase()}</span><div><strong>{teacher.name}</strong><small>{teacher.email}</small></div><button type="button" disabled={!principal} onClick={() => commit((current) => ({ ...current, teachers: current.teachers.map((item) => item.id === teacher.id ? { ...item, status: item.status === "approved" ? "suspended" : "approved" } : item) }), `${teacher.name} access updated`)}>{teacher.status}</button></div>
-            ))}
+            {control.staffAccounts?.length ? control.staffAccounts.map((account) => (
+              <div className="control-person" key={account.id}><span>{account.name.slice(0, 2).toUpperCase()}</span><div><strong>{account.name}</strong><small>{account.email} · {account.role}</small></div><button type="button" disabled={!principal || staffBusyId === account.id} onClick={() => changeStaffStatus(account)}>{staffBusyId === account.id ? "saving…" : account.status}</button></div>
+            )) : <div className="control-empty"><Users size={24} /><strong>No staff accounts yet</strong><span>New verified teacher registrations will wait here for principal approval.</span></div>}
           </section>
         </div>
       ) : null}

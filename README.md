@@ -37,7 +37,7 @@ The complete validation contract checks:
 - globally unique question IDs, visible prompts, rendered questions, and semantic scenario fingerprints;
 - option-order invariance, preventing rearranged A/B/C/D choices from disguising a duplicate.
 
-## MongoDB `Testing` database
+## MongoDB `coach-exam` database
 
 Set the connection string and seed JNVST plus the two new courses:
 
@@ -47,16 +47,18 @@ npm run seed:testing
 npm run seed:courses
 ```
 
-Course collections:
+All application-owned collection names carry the `_Vijetha` suffix. Course collections:
 
-- `jnvst_questions`, `jnvst_tests`, `jnvst_syllabus_topics`, `jnvst_validation_runs`
-- `sainik_questions`, `sainik_tests`, `sainik_syllabus_topics`, `sainik_validation_runs`
-- `rms_questions`, `rms_tests`, `rms_syllabus_topics`, `rms_validation_runs`
+- `jnvst_questions_Vijetha`, `jnvst_tests_Vijetha`, `jnvst_syllabus_topics_Vijetha`, `jnvst_validation_runs_Vijetha`
+- `sainik_questions_Vijetha`, `sainik_tests_Vijetha`, `sainik_syllabus_topics_Vijetha`, `sainik_validation_runs_Vijetha`
+- `rms_questions_Vijetha`, `rms_tests_Vijetha`, `rms_syllabus_topics_Vijetha`, `rms_validation_runs_Vijetha`
 
 Account and student collections in the same `Testing` database:
 
-- `auth_users`, `auth_otps`, `auth_sessions`, `auth_attempts`
-- `students` — account-scoped and course-scoped learner records
+- `auth_users_Vijetha`, `auth_otps_Vijetha`, `auth_sessions_Vijetha`, `auth_attempts_Vijetha`
+- `students_Vijetha` — account-scoped and course-scoped learner records
+- `batch_exams_Vijetha`, `resources_Vijetha`, `institute_control_Vijetha`
+- GridFS bucket `resource_files_Vijetha` (`resource_files_Vijetha.files` and `resource_files_Vijetha.chunks`)
 
 Without `MONGODB_URI`, the question API still serves the same deterministic, validated in-memory banks. Secure login and student management intentionally remain unavailable until MongoDB is configured.
 

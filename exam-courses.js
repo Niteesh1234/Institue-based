@@ -1,4 +1,5 @@
 import { JNVST_BLUEPRINT, JNVST_LEVELS, JNVST_STANDARD, TESTING_MODULE_VERSION } from './syllabus.js';
+import { vijethaCourseCollections } from './database-config.js';
 
 const topics = (items) => items.map((topic) => [topic, [topic.toLowerCase()]]);
 
@@ -117,5 +118,5 @@ export function getExamCourse(key = 'jnvst') {
 }
 
 export function courseCollectionNames(key) {
-  return { questions: `${key}_questions`, tests: `${key}_tests`, syllabus: `${key}_syllabus_topics`, validation: `${key}_validation_runs` };
+  return vijethaCourseCollections(key);
 }

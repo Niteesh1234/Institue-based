@@ -157,7 +157,7 @@ async function fetchQuestionResponse(url, signal) {
 
 async function fetchQuestionData(staticPath, apiPath, signal) {
   let lastError;
-  for (const url of [staticPath, `${API_BASE_URL}${apiPath}`]) {
+  for (const url of [`${API_BASE_URL}${apiPath}`]) {
     try {
       const response = await fetchQuestionResponse(url, signal);
       const payload = await response.json().catch(() => ({}));
@@ -387,7 +387,7 @@ function App() {
   const [studentError, setStudentError] = useState("");
   const [studentReloadKey, setStudentReloadKey] = useState(0);
   const [batchRows, setBatchRows] = useState(initialBatches);
-  const [instituteControl, setInstituteControl] = useInstituteControlState();
+  const [instituteControl, setInstituteControl] = useInstituteControlState(authUser?.demo ? null : authUser);
   const [fullTests, setFullTests] = useState([]);
   const [aggregation, setAggregation] = useState([]);
   const [catalogStatus, setCatalogStatus] = useState("loading");
@@ -395,6 +395,8 @@ function App() {
   const [reloadKey, setReloadKey] = useState(0);
   const [dataSource, setDataSource] = useState("Connecting to Testing");
   const [courseKey, setCourseKey] = useState("jnvst");
+  const [databaseBlueprint, setDatabaseBlueprint] = useState(null);
+  const [databaseCourseProfile, setDatabaseCourseProfile] = useState(null);
   const [testLoadStatus, setTestLoadStatus] = useState("idle");
   const [testLoadError, setTestLoadError] = useState("");
   const [workspaceOpen, setWorkspaceOpen] = useState(false);
@@ -404,7 +406,14 @@ function App() {
   const [searchQuery, setSearchQuery] = useState("");
   const [searchOpen, setSearchOpen] = useState(false);
   const searchRef = useRef(null);
-  const course = getExamCourse(courseKey);
+  const staticCourseDefinition = getExamCourse(courseKey);
+  const courseDefinition = databaseCourseProfile?.key === courseKey
+    ? { ...staticCourseDefinition, ...databaseCourseProfile }
+    : staticCourseDefinition;
+  const course = useMemo(
+    () => ({ ...courseDefinition, blueprint: databaseBlueprint || courseDefinition.blueprint }),
+    [courseDefinition, databaseBlueprint],
+  );
   const currentUser = authUser || { name: "Vijetha User", email: "", role: "teacher" };
   const principalAccess = isPrincipalRole(currentUser);
   const visibleNavItems = principalAccess
@@ -416,8 +425,19 @@ function App() {
     new URLSearchParams(window.location.search).get("studentAccess");
 
   useEffect(() => {
-    window.localStorage.setItem(BATCH_STORAGE_KEY, JSON.stringify(batchRows.slice(0, 12)));
-  }, [batchRows]);
+    if (authUser && instituteControl.batches?.length) {
+      setBatchRows(instituteControl.batches.slice(0, 12));
+    }
+  }, [authUser?.id, instituteControl.updatedAt]);
+
+  const updateBatches = (next) => {
+    setBatchRows((current) => {
+      const value = (typeof next === "function" ? next(current) : next).slice(0, 12);
+      if (authUser) setInstituteControl((control) => ({ ...control, batches: value }));
+      else window.localStorage.setItem(BATCH_STORAGE_KEY, JSON.stringify(value));
+      return value;
+    });
+  };
 
   useEffect(() => {
     if (!IS_NATIVE_APP) return undefined;
@@ -448,7 +468,7 @@ function App() {
   }, [mobileOpen, stage, studioOpen]);
 
   const searchItems = useMemo(() => {
-    const pages = [...visibleNavItems.map(([label]) => label), "Settings"].map(
+    const pages = [...visibleNavItems.map(([label]) => label), ...(principalAccess ? ["Settings"] : [])].map(
       (label) => ({ label, detail: "Workspace page", destination: label }),
     );
     const students = studentRows.map((student) => ({
@@ -543,21 +563,31 @@ function App() {
           ),
           fetchQuestionData(
             `${STATIC_BANK_URL}/${courseKey}/aggregation.json`,
-            `/api/question-aggregation?course=${courseKey}`,
+            `/api/full-test-catalog?view=aggregation&course=${courseKey}`,
             controller.signal,
           ),
         ]);
         const tests = normalizeFullCatalog(catalogPayload.tests || []);
-        validateFullCatalog(tests, course);
+        const nextBlueprint = catalogPayload.contract?.blueprint;
+        const nextCourseProfile = catalogPayload.contract?.courseProfile;
+        const profile = nextCourseProfile?.key === courseKey
+          ? { ...staticCourseDefinition, ...nextCourseProfile }
+          : staticCourseDefinition;
+        const databaseCourse = Array.isArray(nextBlueprint) && nextBlueprint.length
+          ? { ...profile, blueprint: nextBlueprint }
+          : profile;
+        validateFullCatalog(tests, databaseCourse);
+        setDatabaseCourseProfile(profile);
+        setDatabaseBlueprint(databaseCourse.blueprint);
         setFullTests(tests);
         setAggregation(aggregationPayload.aggregation || []);
-        setDataSource(catalogPayload.source || `Testing.${courseKey}_questions`);
+        setDataSource(catalogPayload.source || `coach-exam.${courseKey}_questions_Vijetha`);
         setCatalogStatus("ready");
       } catch (error) {
         if (error.name === "AbortError") return;
         setFullTests([]);
         setAggregation([]);
-        setDataSource("Testing unavailable");
+        setDataSource("Vijetha database unavailable");
         setCatalogError(
           error.message || "Unable to connect to the MongoDB question bank.",
         );
@@ -622,6 +652,8 @@ function App() {
     setAccountOpen(false);
   };
   const changeCourse = (nextCourse) => {
+    setDatabaseBlueprint(null);
+    setDatabaseCourseProfile(null);
     setCourseKey(nextCourse);
     setSelectedTest(null);
     setStudioOpen(false);
@@ -719,14 +751,14 @@ function App() {
               <span>{course.shortName} · {course.year} {t("syllabus")}</span>
             </div>
           </div>
-          <button
+          {principalAccess ? <button
             type="button"
             className={active === "Settings" ? "nav-item active" : "nav-item"}
             onClick={() => navigateWorkspace("Settings")}
           >
             <Settings size={18} />
             <span>{t("settings")}</span>
-          </button>
+          </button> : null}
           <button
             type="button"
             className="profile profile-button"
@@ -847,7 +879,7 @@ function App() {
                 <div className="top-popover account-panel" role="menu">
                   <strong>{currentUser.name}</strong>
                   <span>{roleLabel(currentUser.role)} · {currentUser.email}</span>
-                  <button type="button" role="menuitem" onClick={() => navigateWorkspace("Settings")}>Workspace settings</button>
+                  {principalAccess ? <button type="button" role="menuitem" onClick={() => navigateWorkspace("Settings")}>Workspace settings</button> : null}
                   <button type="button" role="menuitem" onClick={signOut}>Sign out</button>
                 </div>
               ) : null}
@@ -867,6 +899,7 @@ function App() {
               user={currentUser}
               onNavigate={navigateWorkspace}
               onOpenTests={openStudio}
+              canPrint={printAccess}
             />
           )}
           {active === "AI Holo Tutor" && (
@@ -882,12 +915,13 @@ function App() {
               course={course}
               batches={batchRows}
               demo={Boolean(currentUser.demo)}
+              canManage={principalAccess}
             />
           )}
           {active === "Classes" && (
             <ClassesPage
               batches={batchRows}
-              setBatches={setBatchRows}
+              setBatches={updateBatches}
               canManage={principalAccess}
               maxBatches={instituteControl.policies.maxBatches}
             />
@@ -912,6 +946,7 @@ function App() {
               tests={fullTests}
               user={currentUser}
               demo={Boolean(currentUser.demo)}
+              canCreate={principalAccess || Boolean(instituteControl.policies.teacherCanCreateExams)}
             />
           )}
           {active === "Resources" && (
@@ -919,6 +954,9 @@ function App() {
               course={course}
               students={studentRows}
               demo={Boolean(currentUser.demo)}
+              user={currentUser}
+              canUpload={principalAccess || Boolean(instituteControl.policies.teacherCanUploadQuestions)}
+              canManage={principalAccess}
               openUploadRequest={resourceUploadRequest}
               onOpenStudents={() => navigateWorkspace("Students")}
             />
@@ -941,7 +979,7 @@ function App() {
               }}
             />
           )}
-          {active === "Settings" && (
+          {principalAccess && active === "Settings" && (
             <SettingsPage course={course} onCourseChange={changeCourse} />
           )}
         </div>
@@ -1210,7 +1248,13 @@ function LoginPage({ onBack, onLogin, configured }) {
         setConfirmPassword("");
       } else if (mode === "verify") {
         const payload = await authRequest("/api/auth/verify-otp", { method: "POST", body: JSON.stringify({ email, code, purpose: "verify-email" }) });
-        onLogin(payload.user);
+        if (payload.pendingApproval || !payload.token) {
+          setNotice(payload.message || "Email verified. The principal must approve your account before you can sign in.");
+          setMode("login");
+          setCode("");
+        } else {
+          onLogin(payload.user);
+        }
       } else if (mode === "forgot") {
         const payload = await authRequest("/api/auth/request-otp", { method: "POST", body: JSON.stringify({ email, purpose: "reset-password" }) });
         setNotice(payload.message);
@@ -1352,6 +1396,7 @@ function DashboardPage({
   dataSource,
   onNavigate,
   onOpenTests,
+  canPrint,
 }) {
   const { t, subject } = useI18n();
   return (
@@ -1361,13 +1406,9 @@ function DashboardPage({
         title={t("goodMorning", { name: user.name.split(" ")[0] })}
         copy={t("attentionCopy")}
       >
-        <button
-          type="button"
-          className="button secondary"
-          onClick={() => window.print()}
-        >
+        {canPrint ? <button type="button" className="button secondary" onClick={() => window.print()}>
           <Printer size={16} /> {t("printOverview")}
-        </button>
+        </button> : null}
         <button type="button" className="button primary" onClick={() => onOpenTests()}>
           <CircleHelp size={16} /> {t("openFullTests")}
         </button>
@@ -1570,6 +1611,7 @@ function StudentsPage({
   course,
   batches,
   demo,
+  canManage,
 }) {
   const courseBatches = useMemo(() => {
     const matching = batches
@@ -1733,14 +1775,11 @@ function StudentsPage({
         });
         setStudents((current) => [...current, ...imported].sort((a, b) => a.name.localeCompare(b.name)));
       } else {
-        const created = [];
-        for (const row of rows) {
-          const payload = await authRequest("/api/students", {
-            method: "POST",
-            body: JSON.stringify({ ...row, course: course.key }),
-          });
-          created.push(payload.student);
-        }
+        const payload = await authRequest("/api/students?action=import", {
+          method: "POST",
+          body: JSON.stringify({ students: rows.map((row) => ({ ...row, course: course.key })) }),
+        });
+        const created = payload.students || [];
         setStudents((current) => [...current, ...created].sort((a, b) => a.name.localeCompare(b.name)));
       }
       setFormError(`${rows.length} students imported successfully.`);
@@ -1767,7 +1806,7 @@ function StudentsPage({
               placeholder="Search students"
             />
           </label>
-          <button
+          {canManage ? <button
             type="button"
             className="button primary"
             onClick={() => {
@@ -1779,12 +1818,12 @@ function StudentsPage({
             }}
           >
             <UserPlus size={16} /> Add student
-          </button>
-          <input ref={importRef} className="sr-only" type="file" accept=".csv,text/csv" onChange={importStudents} />
-          <button type="button" className="button secondary" disabled={importing} onClick={() => importRef.current?.click()}>
+          </button> : null}
+          {canManage ? <input ref={importRef} className="sr-only" type="file" accept=".csv,text/csv" onChange={importStudents} /> : null}
+          {canManage ? <button type="button" className="button secondary" disabled={importing} onClick={() => importRef.current?.click()}>
             {importing ? <RefreshCw className="spin" size={16} /> : <FileUp size={16} />} {importing ? "Importing…" : "Import CSV"}
-          </button>
-          <a className="button secondary roster-template-link" href="/student-import-template.csv" download>CSV template</a>
+          </button> : null}
+          {canManage ? <a className="button secondary roster-template-link" href="/student-import-template.csv" download>CSV template</a> : null}
         </div>
       </PageHeading>
       {formError && !formOpen ? <div className={`control-notice ${formError.includes("successfully") ? "" : "error"}`} role="status">{formError.includes("successfully") ? <Check size={16} /> : <AlertCircle size={16} />}{formError}</div> : null}
@@ -1856,7 +1895,7 @@ function StudentsPage({
         ) : filteredStudents.length ? (
           <StudentTable
             students={filteredStudents}
-            actions={(student) => (
+            actions={canManage ? (student) => (
               <div className="row-actions">
                 {deleteId === student.id ? (
                   <div className="delete-confirm" role="group" aria-label={`Confirm removal of ${student.name}`}>
@@ -1870,7 +1909,7 @@ function StudentsPage({
                   </>
                 )}
               </div>
-            )}
+            ) : undefined}
           />
         ) : (
           <div className="student-state">

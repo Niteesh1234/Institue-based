@@ -8,7 +8,12 @@ export default async function handler(request, response) {
     assertSameOrigin(request);
     const result = await verifyOtpCode(await readJsonBody(request), request);
     const nativeClient = isNativeClient(request);
-    if (!nativeClient) response.setHeader('Set-Cookie', sessionCookie(result.token));
-    return response.status(200).json({ user: result.user, ...(nativeClient ? { sessionToken: result.token } : {}) });
+    if (result.token && !nativeClient) response.setHeader('Set-Cookie', sessionCookie(result.token));
+    return response.status(200).json({
+      user: result.user,
+      pendingApproval: Boolean(result.pendingApproval),
+      message: result.message,
+      ...(nativeClient && result.token ? { sessionToken: result.token } : {}),
+    });
   } catch (error) { return sendAuthError(response, error); }
 }

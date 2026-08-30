@@ -8,7 +8,9 @@ import {
   ExternalLink,
   FileText,
   Link2,
+  LockKeyhole,
   Pencil,
+  PlayCircle,
   RefreshCw,
   ShieldCheck,
   Trash2,
@@ -34,7 +36,7 @@ const RESOURCE_COPY = {
     copied: 'Student access link copied.', created: 'Uploaded', max: 'PDF, image, text, Word, or PowerPoint · maximum 3 MB',
     deleteConfirm: 'Delete this resource and its uploaded file?', allSecure: 'Assignments are protected by institute ownership and revocable student links.',
     loadError: 'Resources could not be loaded', retry: 'Try again', noAssigned: 'No assigned resources yet',
-    studentTitle: 'Your notes & tests', studentCopy: 'Download the materials assigned to you by Vijetha Institute.',
+    studentTitle: 'Your notes & exams', studentCopy: 'View your assigned materials and complete institute exams in this supervised portal.',
     invalidLink: 'This student link is invalid or has been replaced.', back: 'Vijetha Institute',
   },
   hi: {
@@ -50,7 +52,7 @@ const RESOURCE_COPY = {
     copied: 'विद्यार्थी एक्सेस लिंक कॉपी हो गया।', created: 'अपलोड', max: 'PDF, चित्र, टेक्स्ट, Word या PowerPoint · अधिकतम 3 MB',
     deleteConfirm: 'क्या यह सामग्री और इसकी फ़ाइल हटानी है?', allSecure: 'असाइनमेंट संस्थान की सुरक्षा और बदले जा सकने वाले विद्यार्थी लिंक से सुरक्षित हैं।',
     loadError: 'सामग्री लोड नहीं हो सकी', retry: 'फिर कोशिश करें', noAssigned: 'अभी कोई सामग्री नहीं सौंपी गई है',
-    studentTitle: 'आपके नोट्स और टेस्ट', studentCopy: 'विजेता संस्थान द्वारा आपको सौंपी गई सामग्री डाउनलोड करें।',
+    studentTitle: 'आपके नोट्स और परीक्षाएँ', studentCopy: 'इस सुरक्षित पोर्टल में सौंपी गई सामग्री देखें और संस्थान की परीक्षाएँ पूरी करें।',
     invalidLink: 'यह विद्यार्थी लिंक अमान्य है या बदल दिया गया है।', back: 'विजेता संस्थान',
   },
   te: {
@@ -66,7 +68,7 @@ const RESOURCE_COPY = {
     copied: 'విద్యార్థి యాక్సెస్ లింక్ కాపీ అయింది.', created: 'అప్‌లోడ్', max: 'PDF, చిత్రం, టెక్స్ట్, Word లేదా PowerPoint · గరిష్టం 3 MB',
     deleteConfirm: 'ఈ వనరును మరియు ఫైల్‌ను తొలగించాలా?', allSecure: 'కేటాయింపులు సంస్థ యాజమాన్యం మరియు మార్చగల విద్యార్థి లింకులతో రక్షించబడ్డాయి.',
     loadError: 'వనరులు లోడ్ కాలేదు', retry: 'మళ్లీ ప్రయత్నించండి', noAssigned: 'ఇంకా వనరులు కేటాయించలేదు',
-    studentTitle: 'మీ నోట్స్ మరియు టెస్టులు', studentCopy: 'విజేత ఇన్‌స్టిట్యూట్ మీకు కేటాయించిన సామగ్రిని డౌన్‌లోడ్ చేయండి.',
+    studentTitle: 'మీ నోట్స్ మరియు పరీక్షలు', studentCopy: 'ఈ సురక్షిత పోర్టల్‌లో కేటాయించిన సామగ్రిని చూసి సంస్థ పరీక్షలను పూర్తి చేయండి.',
     invalidLink: 'ఈ విద్యార్థి లింక్ చెల్లదు లేదా మార్చబడింది.', back: 'విజేత ఇన్‌స్టిట్యూట్',
   },
 };
@@ -127,7 +129,7 @@ function demoRows(course, students) {
   }];
 }
 
-export function ResourcesPage({ course, students, demo, onOpenStudents, openUploadRequest = 0 }) {
+export function ResourcesPage({ course, students, demo, user, canUpload = false, canManage = false, onOpenStudents, openUploadRequest = 0 }) {
   const { locale } = useI18n();
   const copy = RESOURCE_COPY[locale] || RESOURCE_COPY.en;
   const emptyForm = () => ({ type: 'note', title: '', description: '', studentIds: [] });
@@ -296,7 +298,7 @@ export function ResourcesPage({ course, students, demo, onOpenStudents, openUplo
           <p>{copy.subtitle}</p>
         </div>
         <div className="heading-actions">
-          <button type="button" className="button primary" disabled={!students.length} onClick={() => { setForm(emptyForm()); setEditingId(''); setError(''); setFormOpen(true); }}>
+          <button type="button" className="button primary" disabled={!canUpload || !students.length} onClick={() => { setForm(emptyForm()); setEditingId(''); setError(''); setFormOpen(true); }}>
             <UploadCloud size={17} /> {copy.upload}
           </button>
         </div>
@@ -353,21 +355,75 @@ export function ResourcesPage({ course, students, demo, onOpenStudents, openUplo
               <div className="resource-card-copy"><span>{resource.type === 'test' ? copy.test : copy.note}</span><h2>{resource.title}</h2><p>{resource.description || resource.fileName}</p><small>{resource.fileName} · {formatBytes(resource.size)} · {copy.created} {new Intl.DateTimeFormat(locale === 'te' ? 'te-IN' : locale === 'hi' ? 'hi-IN' : 'en-IN', { day: 'numeric', month: 'short' }).format(new Date(resource.createdAt))}</small></div>
               <div className="resource-students"><strong>{copy.assigned}</strong><div>{resource.students.map((student) => <span key={student.id}>{student.name}</span>)}</div></div>
               <div className="resource-actions">
-                <button type="button" onClick={() => downloadResource(resource)}><Download size={15} /> {copy.download}</button>
-                <button type="button" onClick={() => openEdit(resource)}><Pencil size={15} /> {copy.edit}</button>
-                <button type="button" className="danger" onClick={() => removeResource(resource)}><Trash2 size={15} /> {copy.remove}</button>
+                {canManage ? <button type="button" onClick={() => downloadResource(resource)}><Download size={15} /> {copy.download}</button> : null}
+                {canManage ? <button type="button" onClick={() => openEdit(resource)}><Pencil size={15} /> {copy.edit}</button> : null}
+                {canManage ? <button type="button" className="danger" onClick={() => removeResource(resource)}><Trash2 size={15} /> {copy.remove}</button> : null}
+                {!canManage ? <span className="resource-protected"><LockKeyhole size={14} /> Principal-managed file</span> : null}
               </div>
-              <div className="resource-share">
+              {canManage ? <div className="resource-share">
                 <label><span>{copy.shareHint}</span><select value={shareStudents[resource.id] || resource.studentIds[0] || ''} onChange={(event) => setShareStudents((current) => ({ ...current, [resource.id]: event.target.value }))}>{resource.students.map((student) => <option key={student.id} value={student.id}>{student.name}</option>)}</select></label>
                 <button type="button" onClick={() => shareStudentAccess(resource)}><Link2 size={15} /> {copy.share}</button>
-              </div>
+              </div> : null}
             </article>
           ))}
         </section>
       ) : students.length ? (
-        <section className="panel resource-empty"><UploadCloud size={30} /><h2>{copy.empty}</h2><p>{copy.emptyCopy}</p><button type="button" className="button primary" onClick={() => setFormOpen(true)}>{copy.upload}</button></section>
+        <section className="panel resource-empty"><UploadCloud size={30} /><h2>{copy.empty}</h2><p>{copy.emptyCopy}</p>{canUpload ? <button type="button" className="button primary" onClick={() => setFormOpen(true)}>{copy.upload}</button> : null}</section>
       ) : null}
     </>
+  );
+}
+
+function StudentExamRunner({ exam, studentId, token, onClose, onSubmitted }) {
+  const [answers, setAnswers] = useState({});
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState('');
+  const answerCount = Object.keys(answers).length;
+  const submit = async () => {
+    if (!window.confirm(`Submit ${answerCount} answered question${answerCount === 1 ? '' : 's'}? Answers cannot be changed after submission.`)) return;
+    setSubmitting(true);
+    setError('');
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/batch-exams?student=${encodeURIComponent(studentId)}&token=${encodeURIComponent(token)}&id=${encodeURIComponent(exam.id)}`, {
+        method: 'POST',
+        cache: 'no-store',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ answers }),
+      });
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(payload.error || 'The exam could not be submitted.');
+      onSubmitted(exam.id, payload.result);
+    } catch (requestError) {
+      setError(requestError.message || 'The exam could not be submitted.');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+  return (
+    <div className="student-exam-backdrop" role="dialog" aria-modal="true" aria-label={exam.title}>
+      <section className="student-exam-runner">
+        <header><div><span>SUPERVISED BATCH EXAM</span><h1>{exam.title}</h1><p>{exam.questionCount} questions · answers are checked only after final submission</p></div><button type="button" aria-label="Close exam" onClick={onClose}><X size={20} /></button></header>
+        <div className="student-exam-progress"><b>{answerCount}</b> of {exam.questionCount} answered</div>
+        <div className="student-exam-questions">
+          {exam.questions.map((question, index) => (
+            <article key={question.questionId}>
+              <div><b>{index + 1}</b><span>{question.difficultyLabel || question.difficulty}</span><small>{question.subject} · {question.topic}</small></div>
+              {question.passage ? <blockquote>{question.passage}</blockquote> : null}
+              <h2>{question.stem || question.text}</h2>
+              <div className="student-exam-options">
+                {(question.options || []).map((option, optionIndex) => {
+                  const optionId = String(option?.id || String.fromCharCode(65 + optionIndex)).toUpperCase();
+                  const label = typeof option === 'string' ? option : option?.text || option?.label || optionId;
+                  return <label key={optionId} className={answers[question.questionId] === optionId ? 'selected' : ''}><input type="radio" name={question.questionId} value={optionId} checked={answers[question.questionId] === optionId} onChange={() => setAnswers((current) => ({ ...current, [question.questionId]: optionId }))} /><b>{optionId}</b><span>{label}</span></label>;
+                })}
+              </div>
+            </article>
+          ))}
+        </div>
+        {error ? <div className="auth-alert error" role="alert"><AlertCircle size={16} />{error}</div> : null}
+        <footer><span><LockKeyhole size={15} /> No answer checking or changes after submission</span><button type="button" className="button primary" disabled={submitting} onClick={submit}>{submitting ? <RefreshCw className="spin" size={16} /> : <Check size={16} />}{submitting ? 'Submitting…' : 'Final submit'}</button></footer>
+      </section>
+    </div>
   );
 }
 
@@ -379,6 +435,28 @@ export function StudentResourcesPortal({ accessCode }) {
   const token = separator > 0 ? accessCode.slice(separator + 1) : '';
   const [payload, setPayload] = useState(null);
   const [error, setError] = useState('');
+  const [activeExam, setActiveExam] = useState(null);
+  const [examLoading, setExamLoading] = useState('');
+
+  const openExam = async (exam) => {
+    setExamLoading(exam.id);
+    setError('');
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/batch-exams?student=${encodeURIComponent(studentId)}&token=${encodeURIComponent(token)}&id=${encodeURIComponent(exam.id)}`, { cache: 'no-store' });
+      const body = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(body.error || 'The exam could not be opened.');
+      setActiveExam(body.exam);
+    } catch (requestError) {
+      setError(requestError.message || 'The exam could not be opened.');
+    } finally {
+      setExamLoading('');
+    }
+  };
+
+  const recordSubmission = (examId, result) => {
+    setPayload((current) => ({ ...current, exams: (current.exams || []).map((exam) => exam.id === examId ? { ...exam, status: 'submitted', submitted: true, result } : exam) }));
+    setActiveExam(null);
+  };
 
   useEffect(() => {
     if (!studentId || !token) { setError(copy.invalidLink); return; }
@@ -397,7 +475,11 @@ export function StudentResourcesPortal({ accessCode }) {
     <main className="student-resource-portal">
       <header><a href={PUBLIC_APP_URL}><span className="student-resource-logo">V</span><strong>{copy.back}</strong></a><LanguageSelector compact /></header>
       <section className="student-resource-hero"><span><ShieldCheck size={15} /> PRIVATE STUDENT LIBRARY</span><h1>{copy.studentTitle}</h1><p>{copy.studentCopy}</p>{payload?.student ? <div><b>{payload.student.name}</b><small>{payload.student.batch}</small></div> : null}</section>
-      {error ? <section className="student-resource-state error"><AlertCircle size={28} /><h2>{copy.invalidLink}</h2><p>{error}</p></section> : !payload ? <section className="student-resource-state"><RefreshCw className="spin" size={28} /><h2>{copy.loading}</h2></section> : payload.resources.length ? <section className="student-resource-list">{payload.resources.map((resource) => <article key={resource.id}><div className={`resource-type-icon ${resource.type}`}>{resource.type === 'test' ? <ClipboardCheck size={22} /> : <BookOpen size={22} />}</div><div><span>{resource.type === 'test' ? copy.test : copy.note}</span><h2>{resource.title}</h2><p>{resource.description}</p><small>{resource.fileName} · {formatBytes(resource.size)}</small></div><a href={`${API_BASE_URL}/api/resources?student=${encodeURIComponent(studentId)}&token=${encodeURIComponent(token)}&download=${encodeURIComponent(resource.id)}`} target="_blank" rel="noreferrer"><Download size={16} /> {copy.download}<ExternalLink size={13} /></a></article>)}</section> : <section className="student-resource-state"><FileText size={30} /><h2>{copy.noAssigned}</h2></section>}
+      {error ? <section className="student-resource-state error"><AlertCircle size={28} /><h2>Unable to open the student portal</h2><p>{error}</p></section> : !payload ? <section className="student-resource-state"><RefreshCw className="spin" size={28} /><h2>{copy.loading}</h2></section> : <>
+        {(payload.exams || []).length ? <section className="student-exam-list"><h2>Assigned exams</h2>{payload.exams.map((exam) => <article key={exam.id}><div><span>{exam.status}</span><h3>{exam.title}</h3><p>{exam.teacher} · {exam.questionCount} questions · 20 Easy + 20 Medium + 20 Challenging</p></div>{exam.submitted ? <strong>{exam.result.score} / {exam.result.totalMarks}</strong> : <button type="button" disabled={exam.status === 'scheduled' || examLoading === exam.id} onClick={() => openExam(exam)}>{examLoading === exam.id ? <RefreshCw className="spin" size={16} /> : <PlayCircle size={16} />}{exam.status === 'scheduled' ? 'Scheduled' : 'Start exam'}</button>}</article>)}</section> : null}
+        {payload.resources?.length ? <section className="student-resource-list">{payload.resources.map((resource) => <article key={resource.id}><div className={`resource-type-icon ${resource.type}`}>{resource.type === 'test' ? <ClipboardCheck size={22} /> : <BookOpen size={22} />}</div><div><span>{resource.type === 'test' ? copy.test : copy.note}</span><h2>{resource.title}</h2><p>{resource.description}</p><small>{resource.fileName} · {formatBytes(resource.size)}</small></div><span className="student-view-only"><LockKeyhole size={15} /> Principal-controlled</span></article>)}</section> : !(payload.exams || []).length ? <section className="student-resource-state"><FileText size={30} /><h2>{copy.noAssigned}</h2></section> : null}
+      </>}
+      {activeExam ? <StudentExamRunner exam={activeExam} studentId={studentId} token={token} onClose={() => setActiveExam(null)} onSubmitted={recordSubmission} /> : null}
     </main>
   );
 }

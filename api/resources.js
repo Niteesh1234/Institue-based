@@ -9,6 +9,8 @@ import {
   studentResourceFile,
   updateResource,
 } from '../resource-service.js';
+import { listStudentBatchExams } from '../batch-exam-service.js';
+import { withApiObservability } from '../api-observability.js';
 
 const maxRequestBytes = 4.25 * 1024 * 1024;
 
@@ -43,7 +45,7 @@ function sendFile(response, { resource, stream }) {
   stream.pipe(response);
 }
 
-export default async function handler(request, response) {
+async function handler(request, response) {
   response.setHeader('Cache-Control', 'no-store');
   if (applyNativeCors(request, response)) return;
   try {
@@ -51,7 +53,11 @@ export default async function handler(request, response) {
       if (request.query.download) {
         return sendFile(response, await studentResourceFile(request.query.student, request.query.token, request.query.download));
       }
-      return response.status(200).json(await listStudentResources(request.query.student, request.query.token));
+      const [resourcePayload, exams] = await Promise.all([
+        listStudentResources(request.query.student, request.query.token),
+        listStudentBatchExams(request.query.student, request.query.token),
+      ]);
+      return response.status(200).json({ ...resourcePayload, exams });
     }
     if (request.method === 'GET' && request.query?.download) {
       return sendFile(response, await staffResourceFile(request, request.query.download));
@@ -79,3 +85,5 @@ export default async function handler(request, response) {
     return sendAuthError(response, error);
   }
 }
+
+export default withApiObservability('resources', handler);

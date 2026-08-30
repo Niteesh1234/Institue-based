@@ -1,18 +1,14 @@
 import { MongoClient } from 'mongodb';
 import { generateTestingBank, validateTestingBank } from '../question-engine.js';
 import { ARITHMETIC_SECTION_PLAN, JNVST_BLUEPRINT, JNVST_LEVELS, LANGUAGE_SKILLS, MAT_SECTION_PLAN, TESTING_MODULE_VERSION, syllabusTopicNames } from '../syllabus.js';
+import { VIJETHA_DATABASE_NAME, vijethaCourseCollections } from '../database-config.js';
 
 const mongoUri = process.env.MONGODB_URI;
 if (!mongoUri) throw new Error('MONGODB_URI is required to seed the Testing database.');
 
 const client = new MongoClient(mongoUri, { maxPoolSize: 5, serverSelectionTimeoutMS: 10000 });
-const databaseName = 'Testing';
-const collections = {
-  questions: 'jnvst_questions',
-  tests: 'jnvst_tests',
-  syllabus: 'jnvst_syllabus_topics',
-  validation: 'jnvst_validation_runs'
-};
+const databaseName = VIJETHA_DATABASE_NAME;
+const collections = vijethaCourseCollections('jnvst');
 
 const questionValidator = {
   $jsonSchema: {
