@@ -186,15 +186,19 @@ export function assertSameOrigin(request) {
   if (originHost !== host && origin !== expectedOrigin) throw new AuthError(403, 'INVALID_ORIGIN', 'The request origin is not allowed.');
 }
 
-export async function readJsonBody(request) {
-  if (request.body && typeof request.body === 'object') return request.body;
+export async function readJsonBody(request, { maxBytes = 32768 } = {}) {
+  if (request.body && typeof request.body === 'object') {
+    if (Buffer.byteLength(JSON.stringify(request.body)) > maxBytes) throw new AuthError(413, 'BODY_TOO_LARGE', 'The request body is too large.');
+    return request.body;
+  }
   if (typeof request.body === 'string') {
+    if (Buffer.byteLength(request.body) > maxBytes) throw new AuthError(413, 'BODY_TOO_LARGE', 'The request body is too large.');
     try { return JSON.parse(request.body); } catch { throw new AuthError(400, 'INVALID_JSON', 'The request body is invalid.'); }
   }
   let body = '';
   for await (const chunk of request) {
     body += chunk;
-    if (body.length > 32768) throw new AuthError(413, 'BODY_TOO_LARGE', 'The request body is too large.');
+    if (Buffer.byteLength(body) > maxBytes) throw new AuthError(413, 'BODY_TOO_LARGE', 'The request body is too large.');
   }
   try { return body ? JSON.parse(body) : {}; } catch { throw new AuthError(400, 'INVALID_JSON', 'The request body is invalid.'); }
 }

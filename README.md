@@ -110,7 +110,13 @@ confidence, completeness warnings, and expandable source-page images so diagrams
 remain available for review. PDF/OCR layout coordinates isolate an original image
 crop for each question; graphical option markers and Excel-embedded option images
 become selectable A/B/C/D controls. A student-preview mode hides answer keys until
-submission. Signed-in imports are saved to the institute-scoped
+submission. Every extracted question includes an **Ask AI Tutor** conversation
+that sends the validated stem, choices, selected response, and an optional
+compressed diagram to the existing private tutor endpoint. Active tests enforce
+hint-only explanations; review mode can explain the supplied key, eliminate
+options, and create similar practice. The tutor supports English, Hindi, and
+Telugu, rate limits requests, validates diagram type/size, and falls back to
+deterministic guided help when an AI provider is unavailable. Signed-in imports are saved to the institute-scoped
 `test_imports_Vijetha` collection; demo extraction is live but non-persistent.
 
 Imports are limited to 3 MB and 500 questions, validated by file signature,

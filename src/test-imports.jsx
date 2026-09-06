@@ -1,17 +1,21 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   AlertCircle,
+  Bot,
   Check,
   ChevronRight,
   FileImage,
   FileSpreadsheet,
   FileText,
   LoaderCircle,
+  MessageCircle,
   PlayCircle,
   RotateCcw,
   ScanText,
   Search,
+  Send,
   ShieldCheck,
+  Sparkles,
   Trash2,
   UploadCloud,
 } from "lucide-react";
@@ -46,7 +50,128 @@ function statusLabel(value) {
   return value === "ready" ? "Ready" : value === "review" ? "Needs review" : "Extracted";
 }
 
-function QuestionPreview({ question, sourcePages = [], studentMode = false, selectedAnswer = "", submitted = false, onSelect }) {
+async function compactTutorImage(image) {
+  if (!image?.dataBase64 || !image.mimeType?.startsWith("image/")) return null;
+  if (image.dataBase64.length <= 700000) return { mimeType: image.mimeType, dataBase64: image.dataBase64 };
+  return new Promise((resolve) => {
+    const source = new Image();
+    source.onload = () => {
+      const render = (maxWidth, quality) => {
+        const scale = Math.min(1, maxWidth / source.naturalWidth);
+        const canvas = document.createElement("canvas");
+        canvas.width = Math.max(1, Math.round(source.naturalWidth * scale));
+        canvas.height = Math.max(1, Math.round(source.naturalHeight * scale));
+        canvas.getContext("2d", { alpha: false }).drawImage(source, 0, 0, canvas.width, canvas.height);
+        const dataUrl = canvas.toDataURL("image/webp", quality);
+        return { mimeType: "image/webp", dataBase64: dataUrl.split(",")[1] || "" };
+      };
+      const first = render(1000, 0.76);
+      const result = first.dataBase64.length <= 700000 ? first : render(650, 0.62);
+      resolve(result.dataBase64.length <= 700000 ? result : null);
+    };
+    source.onerror = () => resolve(null);
+    source.src = `data:${image.mimeType};base64,${image.dataBase64}`;
+  });
+}
+
+function QuestionTutor({ question, course, locale, studentMode, submitted, selectedAnswer }) {
+  const displayNumber = question.sourceNumber || question.number;
+  const hintOnly = studentMode && !submitted;
+  const [open, setOpen] = useState(false);
+  const [draft, setDraft] = useState("");
+  const [messages, setMessages] = useState([]);
+  const [busy, setBusy] = useState(false);
+  const [notice, setNotice] = useState("");
+  const [aiConnected, setAiConnected] = useState(false);
+  const diagramRef = useRef(undefined);
+  const transcriptRef = useRef(null);
+
+  useEffect(() => {
+    setMessages([]);
+    setDraft("");
+    setNotice("");
+    diagramRef.current = undefined;
+  }, [question.number, question.stem, hintOnly]);
+
+  useEffect(() => {
+    transcriptRef.current?.scrollTo({ top: transcriptRef.current.scrollHeight, behavior: "smooth" });
+  }, [busy, messages]);
+
+  const suggestions = hintOnly
+    ? ["Give me one hint", "Explain the concept", "What should I notice in the diagram?"]
+    : ["Explain the answer step by step", "Why are the other options wrong?", "Give me a similar practice question"];
+
+  const askTutor = async (value = draft) => {
+    const message = String(value || "").trim();
+    if (!message || busy) return;
+    const nextMessages = [...messages, { role: "user", content: message }];
+    setMessages(nextMessages);
+    setDraft("");
+    setNotice("");
+    setBusy(true);
+    try {
+      if (diagramRef.current === undefined) diagramRef.current = question.hasVisual ? await compactTutorImage(question.questionImage) : null;
+      const payload = await authRequest("/api/ai-tutor", {
+        method: "POST",
+        body: JSON.stringify({
+          message,
+          locale,
+          course: course.key,
+          history: messages.slice(-8),
+          questionContext: {
+            number: String(displayNumber),
+            subject: question.subject || course.shortName,
+            stem: question.stem,
+            options: question.options,
+            selectedOption: selectedAnswer,
+            answer: hintOnly ? "" : question.answer,
+            hintOnly,
+            hasVisual: question.hasVisual,
+            image: diagramRef.current,
+          },
+        }),
+      });
+      setMessages((current) => [...current, { role: "assistant", content: String(payload.reply || "The tutor did not return an explanation.") }]);
+      setAiConnected(Boolean(payload.aiConnected));
+    } catch (requestError) {
+      setMessages((current) => [...current, { role: "assistant", content: "I could not prepare this explanation. Please try again." }]);
+      setNotice(requestError.message || "The question tutor is temporarily unavailable.");
+      setAiConnected(false);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <section className={`question-tutor${open ? " open" : ""}`}>
+      <button type="button" className="question-tutor-toggle" aria-expanded={open} onClick={() => setOpen((value) => !value)}>
+        <span><MessageCircle size={16} /><b>Ask AI Tutor</b><small>{hintOnly ? "Hints only during the test" : "Detailed question explanation"}</small></span>
+        <Sparkles size={16} />
+      </button>
+      {open ? (
+        <div className="question-tutor-body">
+          <div className="question-tutor-status"><Bot size={15} /><span><b>Question {displayNumber} Tutor</b><small>{aiConnected ? "AI connected" : hintOnly ? "Answer-safe hint mode" : "Ready to explain"}</small></span></div>
+          <div className="question-tutor-transcript" ref={transcriptRef} aria-live="polite">
+            {!messages.length ? <p className="question-tutor-intro">{hintOnly ? "Ask what to try next. I will guide you without revealing the final option before submission." : "Ask about the method, correct answer, diagram, or why an option is incorrect."}</p> : null}
+            {messages.map((item, index) => (
+              <article className={item.role} key={`${item.role}-${index}`}><b>{item.role === "assistant" ? "AI Tutor" : "Student"}</b><p>{item.content}</p></article>
+            ))}
+            {busy ? <article className="assistant thinking"><b>AI Tutor</b><p>Reading the question and preparing a clear explanation…</p></article> : null}
+          </div>
+          {!messages.length ? <div className="question-tutor-suggestions">{suggestions.map((suggestion) => <button type="button" onClick={() => askTutor(suggestion)} key={suggestion}>{suggestion}</button>)}</div> : null}
+          {notice ? <p className="question-tutor-notice" role="status">{notice}</p> : null}
+          <form className="question-tutor-composer" onSubmit={(event) => { event.preventDefault(); askTutor(); }}>
+            <input aria-label={`Ask the AI tutor about question ${displayNumber}`} value={draft} onChange={(event) => setDraft(event.target.value)} maxLength={1200} placeholder={hintOnly ? "Ask for a hint or concept explanation…" : "Ask for a detailed explanation…"} />
+            <button type="submit" aria-label="Send question to AI tutor" disabled={!draft.trim() || busy}><Send size={16} /></button>
+          </form>
+          <footer>AI explanations can make mistakes. Check important answers with your teacher.</footer>
+        </div>
+      ) : null}
+    </section>
+  );
+}
+
+function QuestionPreview({ question, course, locale = "en", sourcePages = [], studentMode = false, selectedAnswer = "", submitted = false, onSelect }) {
   const displayNumber = question.sourceNumber || question.number;
   const sourcePage = sourcePages.find((page) => page.pageNumber === question.sourcePage);
   const image = question.questionImage;
@@ -107,6 +232,7 @@ function QuestionPreview({ question, sourcePages = [], studentMode = false, sele
           />
         </details>
       ) : null}
+      <QuestionTutor question={question} course={course} locale={locale} studentMode={studentMode} submitted={submitted} selectedAnswer={selectedAnswer} />
     </article>
   );
 }
@@ -340,7 +466,7 @@ export function TestImportsPage({ course, user, demo = false, canUpload = false,
                 <span><b>{selected.questions?.filter((question) => question.options?.length >= 2).length || 0}</b> with options</span>
                 <span><b>{selected.sourcePages?.length || 0}</b> source pages retained</span>
               </div>
-              <div className="import-question-list">{selected.questions?.map((question, index) => <QuestionPreview question={question} sourcePages={selected.sourcePages} studentMode={studentMode} selectedAnswer={studentAnswers[question.number] || ""} submitted={studentSubmitted} onSelect={(answer) => setStudentAnswers((current) => ({ ...current, [question.number]: answer }))} key={`${selected.id}-${question.sourcePage || 0}-${question.sourceNumber || question.number}-${index}`} />)}</div>
+              <div className="import-question-list">{selected.questions?.map((question, index) => <QuestionPreview question={question} course={course} locale={(selected.ocrLanguage || ocrLanguage) === "hin" ? "hi" : (selected.ocrLanguage || ocrLanguage) === "tel" ? "te" : "en"} sourcePages={selected.sourcePages} studentMode={studentMode} selectedAnswer={studentAnswers[question.number] || ""} submitted={studentSubmitted} onSelect={(answer) => setStudentAnswers((current) => ({ ...current, [question.number]: answer }))} key={`${selected.id}-${question.sourcePage || 0}-${question.sourceNumber || question.number}-${index}`} />)}</div>
               {studentMode ? (
                 <div className="import-test-submit">
                   <div><strong>{studentResult.answered} of {studentResult.total} answered</strong><span>{studentSubmitted ? (studentResult.scorable ? `${studentResult.correct} of ${studentResult.scorable} answer-key questions correct` : "Responses submitted; this paper has no answer key for automatic scoring.") : "Review selections before submitting the preview test."}</span></div>
