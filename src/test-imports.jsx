@@ -83,6 +83,7 @@ function QuestionTutor({ question, course, locale, studentMode, submitted, selec
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState("");
   const [aiConnected, setAiConnected] = useState(false);
+  const [tutorMode, setTutorMode] = useState("ready");
   const diagramRef = useRef(undefined);
   const transcriptRef = useRef(null);
 
@@ -90,6 +91,7 @@ function QuestionTutor({ question, course, locale, studentMode, submitted, selec
     setMessages([]);
     setDraft("");
     setNotice("");
+    setTutorMode("ready");
     diagramRef.current = undefined;
   }, [question.number, question.stem, hintOnly]);
 
@@ -133,10 +135,13 @@ function QuestionTutor({ question, course, locale, studentMode, submitted, selec
       });
       setMessages((current) => [...current, { role: "assistant", content: String(payload.reply || "The tutor did not return an explanation.") }]);
       setAiConnected(Boolean(payload.aiConnected));
+      setTutorMode(payload.mode || "guided");
+      if (!payload.aiConnected) setNotice("Guided explanation shown. Full AI tutoring activates when the institute connects its AI provider.");
     } catch (requestError) {
       setMessages((current) => [...current, { role: "assistant", content: "I could not prepare this explanation. Please try again." }]);
       setNotice(requestError.message || "The question tutor is temporarily unavailable.");
       setAiConnected(false);
+      setTutorMode("error");
     } finally {
       setBusy(false);
     }
@@ -150,7 +155,7 @@ function QuestionTutor({ question, course, locale, studentMode, submitted, selec
       </button>
       {open ? (
         <div className="question-tutor-body">
-          <div className="question-tutor-status"><Bot size={15} /><span><b>Question {displayNumber} Tutor</b><small>{aiConnected ? "AI connected" : hintOnly ? "Answer-safe hint mode" : "Ready to explain"}</small></span></div>
+          <div className="question-tutor-status"><Bot size={15} /><span><b>Question {displayNumber} Tutor</b><small>{aiConnected ? "AI connected" : tutorMode === "guided" ? "Guided fallback mode" : hintOnly ? "Answer-safe hint mode" : "Ready to explain"}</small></span></div>
           <div className="question-tutor-transcript" ref={transcriptRef} aria-live="polite">
             {!messages.length ? <p className="question-tutor-intro">{hintOnly ? "Ask what to try next. I will guide you without revealing the final option before submission." : "Ask about the method, correct answer, diagram, or why an option is incorrect."}</p> : null}
             {messages.map((item, index) => (
