@@ -26,11 +26,7 @@
   "functions": {
     "api/test-imports.js": {
       "maxDuration": 60,
-      "includeFiles": [
-        "node_modules/@tesseract.js-data/**",
-        "node_modules/tesseract.js-core/**",
-        "node_modules/pdfjs-dist/**"
-      ]
+      "includeFiles": "node_modules/{@tesseract.js-data,tesseract.js-core,pdfjs-dist}/**"
     },
     "api/*.js": {
       "maxDuration": 60
