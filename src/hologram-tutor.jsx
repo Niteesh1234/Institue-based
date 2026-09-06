@@ -45,6 +45,7 @@ const COPY = {
     you: "You",
     tutor: "Study Tutor",
     privacy: "Do not share passwords, phone numbers, addresses, or other private information.",
+    providerUnavailable: "Guided syllabus help is active. Connect the institute AI provider for detailed free-form explanations and follow-up tutoring.",
     subject: "Syllabus subject",
     topic: "Topic",
     learningStyle: "How should I teach?",
@@ -79,6 +80,7 @@ const COPY = {
     you: "आप",
     tutor: "स्टडी ट्यूटर",
     privacy: "पासवर्ड, फोन नंबर, पता या अन्य निजी जानकारी साझा न करें।",
+    providerUnavailable: "निर्देशित पाठ्यक्रम सहायता चालू है। विस्तृत स्वतंत्र व्याख्या और आगे के प्रश्नों के लिए संस्थान का AI प्रदाता जोड़ें।",
     subject: "पाठ्यक्रम विषय",
     topic: "अध्याय",
     learningStyle: "कैसे समझाऊँ?",
@@ -113,6 +115,7 @@ const COPY = {
     you: "మీరు",
     tutor: "స్టడీ ట్యూటర్",
     privacy: "పాస్‌వర్డ్‌లు, ఫోన్ నంబర్లు, చిరునామాలు లేదా ఇతర వ్యక్తిగత సమాచారాన్ని పంచుకోవద్దు.",
+    providerUnavailable: "గైడెడ్ సిలబస్ సహాయం పనిచేస్తోంది. వివరమైన స్వేచ్ఛా వివరణలు, తదుపరి ప్రశ్నల కోసం సంస్థ AI ప్రొవైడర్‌ను కనెక్ట్ చేయండి.",
     subject: "సిలబస్ విషయం",
     topic: "అంశం",
     learningStyle: "ఎలా బోధించాలి?",
@@ -247,6 +250,7 @@ export function StudyTutorPage({ course, user }) {
       const reply = String(payload.reply || copy.error);
       setMessages((current) => [...current, { role: "assistant", content: reply }]);
       setAiConnected(Boolean(payload.aiConnected));
+      setNotice(payload.aiConnected ? "" : copy.providerUnavailable);
       if (voiceReplies) speakReply(reply, locale, {
         onStart: () => setSpeaking(true),
         onEnd: () => setSpeaking(false),

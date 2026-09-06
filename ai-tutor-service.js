@@ -66,7 +66,7 @@ const GUIDED_COPY = {
       ? `${topic} is part of ${subject}. First recall the meaning and one example. Now try this learning check: explain one rule or pattern you would use when solving a ${topic} question. Send your attempt and I will guide the next step.`
       : mode === 'steps'
         ? `${topic} is part of ${subject}.\n1. State what the question gives you.\n2. Identify the ${topic} rule or relationship.\n3. Apply that rule one small step at a time.\n4. Check that the result answers the original question.\nTell me the exact part that is confusing, and I will work through it with you.`
-        : `${topic} is a ${subject} syllabus topic. Start by describing the idea in your own words, then connect it to one everyday example. Ask me a specific “why” or “how” question about ${topic}, and I will explain it at Class VI level.`,
+        : `${topic} belongs to the ${subject} syllabus. Start by describing the idea in your own words, then connect it to one everyday example. Ask me a specific “why” or “how” question about ${topic}, and I will explain it at Class VI level.`,
     default: (course, sections) => `I can guide you through the ${course.shortName} syllabus: ${sections}. Choose a subject and topic above, then ask what you want to understand. I am in guided mode right now; full conversational explanations require the institute's AI provider connection.`,
   },
   hi: {
