@@ -70,7 +70,7 @@ import { ResourcesPage, StudentResourcesPortal } from "./resources.jsx";
 import { BatchExamsPage } from "./batch-exams.jsx";
 import { TestImportsPage } from "./test-imports.jsx";
 import { createExamSet, EXAM_SET_CODES } from "../exam-set-engine.js";
-import { HologramTutorPage } from "./hologram-tutor.jsx";
+import { StudyTutorPage } from "./hologram-tutor.jsx";
 import {
   canPrintPapers,
   isPrincipalRole,
@@ -300,7 +300,7 @@ function validateFullCatalog(tests, course) {
 
 const NAV_ITEMS = [
   ["Dashboard", LayoutDashboard],
-  ["AI Holo Tutor", GraduationCap],
+  ["AI Study Tutor", GraduationCap],
   ["Students", Users],
   ["Classes", CalendarDays],
   ["Mock Tests", ClipboardCheck],
@@ -314,7 +314,7 @@ const NAV_ITEMS = [
 
 const NAV_MESSAGE_KEYS = {
   Dashboard: "dashboard",
-  "AI Holo Tutor": "aiHoloTutor",
+  "AI Study Tutor": "aiHoloTutor",
   Students: "students",
   Classes: "classes",
   "Mock Tests": "mockTests",
@@ -905,8 +905,8 @@ function App() {
               canPrint={printAccess}
             />
           )}
-          {active === "AI Holo Tutor" && (
-            <HologramTutorPage course={course} user={currentUser} />
+          {active === "AI Study Tutor" && (
+            <StudyTutorPage course={course} user={currentUser} />
           )}
           {active === "Students" && (
             <StudentsPage

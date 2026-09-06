@@ -34,7 +34,7 @@ export default async function handler(request, response) {
     try {
       if (request.method !== 'POST') return response.status(405).json({ error: 'Method not allowed.', code: 'METHOD_NOT_ALLOWED' });
       assertSameOrigin(request);
-      return response.status(200).json(await answerTutorQuestion(await readJsonBody(request, { maxBytes: 900 * 1024 }), request));
+      return response.status(200).json(await answerTutorQuestion(await readJsonBody(request), request));
     } catch (error) {
       return sendAuthError(response, error);
     }

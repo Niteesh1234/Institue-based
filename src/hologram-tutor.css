@@ -182,9 +182,10 @@
 .hologram-identity h2 { margin: 5px 0 3px; font: 800 28px Syne, sans-serif; letter-spacing: -.045em; }
 .hologram-identity p { color: #a5c6c2; font-size: 10px; }
 .hologram-topic-cloud { position: relative; z-index: 2; display: flex; flex-wrap: wrap; gap: 5px; margin-top: 16px; }
-.hologram-topic-cloud span { padding: 5px 8px; border: 1px solid rgba(108, 220, 207, .23); border-radius: 20px; background: rgba(39, 124, 118, .16); color: #acd6d1; font-size: 8px; }
+.hologram-topic-cloud button { padding: 5px 8px; border: 1px solid rgba(108, 220, 207, .23); border-radius: 20px; background: rgba(39, 124, 118, .16); color: #acd6d1; font: 750 8px "DM Sans", sans-serif; cursor: pointer; }
+.hologram-topic-cloud button:hover, .hologram-topic-cloud button.active { border-color: rgba(129, 255, 239, .72); background: rgba(57, 183, 169, .3); color: #e1fffb; }
 
-.hologram-chat-panel { min-width: 0; display: grid; grid-template-rows:auto minmax(300px,1fr) auto auto auto auto; background: #fffdfa; }
+.hologram-chat-panel { min-width: 0; display: grid; grid-template-rows:auto auto minmax(300px,1fr) auto auto auto auto; background: #fffdfa; }
 .hologram-chat-topbar { min-height: 73px; display: flex; align-items: center; justify-content: space-between; padding: 0 24px; border-bottom: 1px solid #e4e8e4; }
 .hologram-chat-topbar > div { display: flex; align-items: center; gap: 10px; color: #268e82; }
 .hologram-chat-topbar span { display: flex; flex-direction: column; gap: 2px; }
@@ -192,6 +193,17 @@
 .hologram-chat-topbar small { color: #5d6d69; font-size: 8px; }
 .hologram-chat-topbar button { width: 36px; height: 36px; display: grid; place-items: center; border: 1px solid #d9dfdc; border-radius: 50%; background: #fff; color: #768480; }
 .hologram-chat-topbar button.active { border-color: #a5d8ce; background: #e9f6f2; color: #258f82; }
+
+.hologram-learning-context { display: grid; grid-template-columns: minmax(135px, .72fr) minmax(175px, 1fr); gap: 10px 12px; padding: 14px 24px; border-bottom: 1px solid #e4e8e4; background: #f7faf8; }
+.hologram-learning-context label { min-width: 0; display: grid; gap: 6px; }
+.hologram-learning-context label > span, .hologram-learning-context legend { color: #657773; font-size: 8px; font-weight: 850; letter-spacing: .04em; }
+.hologram-learning-context select { width: 100%; height: 36px; padding: 0 30px 0 10px; border: 1px solid #cedbd6; border-radius: 8px; outline: 0; background: #fff; color: #29423e; font: 700 9px "DM Sans", sans-serif; }
+.hologram-learning-context select:focus { border-color: #63b8aa; box-shadow: 0 0 0 3px rgba(53, 166, 150, .11); }
+.hologram-learning-context fieldset { min-width: 0; grid-column: 1 / -1; margin: 0; padding: 0; border: 0; }
+.hologram-learning-context fieldset > div { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 6px; }
+.hologram-learning-context fieldset button { min-height: 31px; display: inline-flex; align-items: center; gap: 6px; padding: 6px 10px; border: 1px solid #ccdcd7; border-radius: 18px; background: #fff; color: #58706a; font: 750 8px "DM Sans", sans-serif; cursor: pointer; }
+.hologram-learning-context fieldset button:hover { border-color: #77bbae; color: #277e72; }
+.hologram-learning-context fieldset button.active { border-color: #5eaa9d; background: #def2ec; color: #176f65; box-shadow: inset 0 0 0 1px rgba(66, 153, 140, .12); }
 
 .hologram-transcript { min-height: 0; max-height: 430px; overflow: auto; display: flex; flex-direction: column; gap: 17px; padding: 25px; scrollbar-width: thin; scrollbar-color: #b9d1ca transparent; }
 .hologram-transcript article { display: flex; align-items: flex-start; gap: 10px; max-width: 88%; }
@@ -246,6 +258,8 @@
   .hologram-identity h2 { font-size: 22px; }
   .hologram-topic-cloud { display: none; }
   .hologram-chat-panel { min-height: 590px; }
+  .hologram-learning-context { grid-template-columns: 1fr; padding: 14px 18px; }
+  .hologram-learning-context fieldset { grid-column: auto; }
   .hologram-transcript { max-height: 390px; padding: 18px; }
   .hologram-transcript article { max-width: 95%; }
   .hologram-suggestions { padding: 0 18px 13px; }

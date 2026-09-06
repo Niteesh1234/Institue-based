@@ -36,63 +36,65 @@ const arithmetic = await answerTutorQuestion({ message: 'What is 18 times 7?', l
 if (!arithmetic.reply.includes('126')) throw new Error('Guided arithmetic fallback did not solve a safe calculation.');
 checks += 1;
 
-const questionOptions = [
-  { id: 'A', label: '21' },
-  { id: 'B', label: '24' },
-  { id: 'C', label: '28' },
-  { id: 'D', label: '32' },
-];
-const activeTestHint = await answerTutorQuestion({
-  message: 'What is the answer? Explain it.',
+const selectedTopic = await answerTutorQuestion({
+  message: 'Why do we use this idea?',
   locale: 'en',
   course: 'jnvst',
-  questionContext: {
-    number: '8',
-    stem: 'What is 4 times 7?',
-    options: questionOptions,
-    answer: 'C',
-    selectedOption: 'B',
-    hintOnly: true,
-    hasVisual: true,
+  learningContext: {
+    subject: 'Arithmetic',
+    topic: 'Factors and Multiples',
+    mode: 'steps',
   },
 }, request);
-if (!/hint/i.test(activeTestHint.reply) || /\b28\b|option C/i.test(activeTestHint.reply) || !/diagram/i.test(activeTestHint.reply)) {
-  throw new Error('Active-test question tutoring did not preserve answer-safe diagram hint mode.');
+if (!/Factors and Multiples/.test(selectedTopic.reply) || !/^Factors and Multiples is part of Arithmetic\.\n1\./.test(selectedTopic.reply)) {
+  throw new Error('Selected syllabus topic did not produce step-by-step guided learning.');
+}
+if (selectedTopic.learningContext.subject !== 'Arithmetic' || selectedTopic.learningContext.topic !== 'Factors and Multiples' || selectedTopic.learningContext.mode !== 'steps') {
+  throw new Error('Validated learning context was not returned to the student client.');
+}
+checks += 2;
+
+const practiceMode = await answerTutorQuestion({
+  message: 'Help me practise this concept.',
+  locale: 'en',
+  course: 'sainik',
+  learningContext: {
+    subject: 'Mathematics',
+    topic: 'Fractions',
+    mode: 'practice',
+  },
+}, request);
+if (!/Now try this learning check/.test(practiceMode.reply) || practiceMode.learningContext.mode !== 'practice') {
+  throw new Error('Practice learning mode did not provide an interactive learning check.');
 }
 checks += 1;
 
-const reviewedQuestion = await answerTutorQuestion({
-  message: 'Explain the answer step by step.',
-  locale: 'en',
-  course: 'jnvst',
-  questionContext: {
-    number: '8',
-    stem: 'What is 4 times 7?',
-    options: questionOptions,
-    answer: 'C',
-    selectedOption: 'B',
-    hintOnly: false,
-  },
-}, request);
-if (!reviewedQuestion.reply.includes('28')) throw new Error('Review-mode question tutoring did not explain the supplied arithmetic question.');
-checks += 1;
-
-let rejectedDiagram = false;
+let rejectedSubject = false;
 try {
   await answerTutorQuestion({
-    message: 'Explain this diagram.',
+    message: 'Explain this subject.',
     locale: 'en',
     course: 'jnvst',
-    questionContext: {
-      stem: 'Choose the next figure.',
-      hintOnly: true,
-      image: { mimeType: 'image/webp', dataBase64: Buffer.alloc(600 * 1024 + 1).toString('base64') },
-    },
+    learningContext: { subject: 'Physics', topic: '', mode: 'explain' },
   }, request);
 } catch (error) {
-  rejectedDiagram = error.code === 'TUTOR_IMAGE_TOO_LARGE' && error.status === 413;
+  rejectedSubject = error.code === 'TUTOR_SUBJECT_INVALID' && error.status === 400;
 }
-if (!rejectedDiagram) throw new Error('Oversized question diagrams were not rejected.');
+if (!rejectedSubject) throw new Error('A subject outside the selected exam syllabus was not rejected.');
+checks += 1;
+
+let rejectedTopic = false;
+try {
+  await answerTutorQuestion({
+    message: 'Explain this topic.',
+    locale: 'en',
+    course: 'jnvst',
+    learningContext: { subject: 'Arithmetic', topic: 'Water Cycle', mode: 'explain' },
+  }, request);
+} catch (error) {
+  rejectedTopic = error.code === 'TUTOR_TOPIC_INVALID' && error.status === 400;
+}
+if (!rejectedTopic) throw new Error('A topic outside the selected subject was not rejected.');
 checks += 1;
 
 const topic = await answerTutorQuestion({ message: 'Help me learn Pattern Completion', locale: 'en', course: 'jnvst' }, request);

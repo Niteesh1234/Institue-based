@@ -110,13 +110,13 @@ confidence, completeness warnings, and expandable source-page images so diagrams
 remain available for review. PDF/OCR layout coordinates isolate an original image
 crop for each question; graphical option markers and Excel-embedded option images
 become selectable A/B/C/D controls. A student-preview mode hides answer keys until
-submission. Every extracted question includes an **Ask AI Tutor** conversation
-that sends the validated stem, choices, selected response, and an optional
-compressed diagram to the existing private tutor endpoint. Active tests enforce
-hint-only explanations; review mode can explain the supplied key, eliminate
-options, and create similar practice. The tutor supports English, Hindi, and
-Telugu, rate limits requests, validates diagram type/size, and falls back to
-deterministic guided help when an AI provider is unavailable. Signed-in imports are saved to the institute-scoped
+submission. Test extraction remains separate from the **AI Study Tutor** module.
+Students open the tutor from its own workspace navigation item, select a verified
+exam subject and topic, choose simple explanation, step-by-step, or guided-practice
+mode, and ask free-form follow-up questions. The tutor supports English, Hindi,
+and Telugu, validates subject/topic selections against the selected exam syllabus,
+rate limits requests, and falls back to deterministic guided help when an AI
+provider is unavailable. Signed-in imports are saved to the institute-scoped
 `test_imports_Vijetha` collection; demo extraction is live but non-persistent.
 
 Imports are limited to 3 MB and 500 questions, validated by file signature,
@@ -134,12 +134,14 @@ The prepaid ledger records principal-authorized credits without pretending to
 process money. Connect and configure the institute's selected payment provider
 before enabling real online collection.
 
-## Vijetha Holo Tutor
+## Vijetha AI Study Tutor
 
-The browser tutor accepts typed or spoken questions, keeps recent conversation
-context, answers in English, Hindi, or Telugu, and speaks its replies using the
-device voice. Final speech-recognition results are submitted automatically, so
-students can continue a hands-free question-and-answer flow.
+The browser tutor is a separate student-learning module, not part of test import.
+It accepts typed or spoken questions, keeps recent conversation context, validates
+the selected exam subject and topic, and supports simple explanation,
+step-by-step, and guided-practice teaching styles. It answers in English, Hindi,
+or Telugu and can speak replies using the device voice. Final speech-recognition
+results are submitted automatically for a hands-free question-and-answer flow.
 
 On Vercel, the AI SDK uses the deployment's automatically managed
 `VERCEL_OIDC_TOKEN` with AI Gateway. For local development outside Vercel, set

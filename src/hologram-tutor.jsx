@@ -2,11 +2,14 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Bot,
   BookOpen,
+  Footprints,
+  Lightbulb,
   Mic,
   MicOff,
   Send,
   ShieldCheck,
   Sparkles,
+  Target,
   Volume2,
   VolumeX,
 } from "lucide-react";
@@ -16,76 +19,106 @@ import "./hologram-tutor.css";
 
 const COPY = {
   en: {
-    kicker: "INTERACTIVE LEARNING ASSISTANT",
-    title: "Meet Vijetha Holo Tutor",
-    copy: "Ask by voice or text. The tutor stays focused on the selected entrance exam and explains concepts at Class VI level.",
+    kicker: "INDEPENDENT SYLLABUS LEARNING CHAT",
+    title: "Vijetha AI Study Tutor",
+    copy: "Choose a syllabus subject and topic, then ask any related question by voice or text. The tutor teaches the concept at Class VI level and follows your preferred learning style.",
     online: "AI connected",
     guided: "Guided syllabus mode",
     listening: "Listening…",
     speaking: "Speaking…",
     thinking: "Preparing an explanation…",
-    placeholder: "Ask about a topic, question, test, or study plan…",
+    placeholder: "Ask anything about the selected syllabus topic…",
     send: "Send message",
     mic: "Use microphone",
     stopMic: "Stop listening",
     soundOn: "Voice replies on",
     soundOff: "Voice replies off",
     disclosure: "AI tutor · Answers can make mistakes. Teachers should review important guidance.",
-    intro: "Hello! I am your Vijetha Holo Tutor. Ask me about the syllabus, a difficult concept, or how to prepare for your next test.",
-    suggestions: ["Explain today's syllabus", "Give me a 5-question warm-up", "Help me plan my study time"],
+    intro: "Hello! Choose a subject and topic above, then tell me what you want to understand. You can ask follow-up questions until the concept is clear.",
+    suggestions: {
+      explain: ["Explain this topic simply", "Why is this useful?", "Give me an everyday example"],
+      steps: ["Teach this step by step", "Show me a worked example", "What should I do first?"],
+      practice: ["Give me one practice question", "Start with an easy question", "Quiz me without showing the answer"],
+    },
     microphoneUnsupported: "Voice input is not supported in this browser. You can continue by typing.",
     error: "I could not reach the tutor service. Please try again, or ask a syllabus question in guided mode.",
     you: "You",
-    tutor: "Holo Tutor",
+    tutor: "Study Tutor",
     privacy: "Do not share passwords, phone numbers, addresses, or other private information.",
+    subject: "Syllabus subject",
+    topic: "Topic",
+    learningStyle: "How should I teach?",
+    explain: "Explain simply",
+    steps: "Step by step",
+    practice: "Practice with me",
   },
   hi: {
-    kicker: "इंटरैक्टिव लर्निंग असिस्टेंट",
-    title: "विजेता होलो ट्यूटर से मिलिए",
-    copy: "आवाज़ या टेक्स्ट से पूछें। ट्यूटर चुनी गई प्रवेश परीक्षा पर केंद्रित रहता है और कक्षा VI के स्तर पर समझाता है।",
+    kicker: "अलग पाठ्यक्रम लर्निंग चैट",
+    title: "विजेता AI स्टडी ट्यूटर",
+    copy: "पाठ्यक्रम का विषय और अध्याय चुनें, फिर आवाज़ या टेक्स्ट से कोई भी संबंधित प्रश्न पूछें। ट्यूटर कक्षा VI के स्तर पर आपकी पसंद की शैली में समझाता है।",
     online: "AI जुड़ा है",
     guided: "निर्देशित पाठ्यक्रम मोड",
     listening: "सुन रहा है…",
     speaking: "उत्तर बोल रहा है…",
     thinking: "व्याख्या तैयार की जा रही है…",
-    placeholder: "किसी विषय, प्रश्न, टेस्ट या अध्ययन योजना के बारे में पूछें…",
+    placeholder: "चुने हुए पाठ्यक्रम विषय के बारे में कुछ भी पूछें…",
     send: "संदेश भेजें",
     mic: "माइक्रोफ़ोन का उपयोग करें",
     stopMic: "सुनना बंद करें",
     soundOn: "आवाज़ में उत्तर चालू",
     soundOff: "आवाज़ में उत्तर बंद",
     disclosure: "AI ट्यूटर · उत्तरों में गलती हो सकती है। महत्वपूर्ण मार्गदर्शन शिक्षक से जाँचें।",
-    intro: "नमस्ते! मैं आपका विजेता होलो ट्यूटर हूँ। पाठ्यक्रम, कठिन अवधारणा या अगले टेस्ट की तैयारी के बारे में पूछिए।",
-    suggestions: ["आज का पाठ्यक्रम समझाइए", "5 प्रश्नों का अभ्यास दीजिए", "मेरी पढ़ाई की योजना बनाइए"],
+    intro: "नमस्ते! ऊपर विषय और अध्याय चुनें, फिर बताइए कि आप क्या समझना चाहते हैं। अवधारणा स्पष्ट होने तक आगे के प्रश्न पूछ सकते हैं।",
+    suggestions: {
+      explain: ["इसे सरल भाषा में समझाइए", "यह उपयोगी क्यों है?", "रोज़मर्रा का उदाहरण दीजिए"],
+      steps: ["इसे चरण-दर-चरण सिखाइए", "एक हल किया उदाहरण दिखाइए", "पहले क्या करना चाहिए?"],
+      practice: ["एक अभ्यास प्रश्न दीजिए", "आसान प्रश्न से शुरू करें", "उत्तर बताए बिना प्रश्न पूछें"],
+    },
     microphoneUnsupported: "इस ब्राउज़र में आवाज़ इनपुट उपलब्ध नहीं है। आप टाइप करके पूछ सकते हैं।",
     error: "ट्यूटर सेवा से संपर्क नहीं हो सका। फिर प्रयास करें या निर्देशित मोड में पाठ्यक्रम का प्रश्न पूछें।",
     you: "आप",
-    tutor: "होलो ट्यूटर",
+    tutor: "स्टडी ट्यूटर",
     privacy: "पासवर्ड, फोन नंबर, पता या अन्य निजी जानकारी साझा न करें।",
+    subject: "पाठ्यक्रम विषय",
+    topic: "अध्याय",
+    learningStyle: "कैसे समझाऊँ?",
+    explain: "सरल व्याख्या",
+    steps: "चरण-दर-चरण",
+    practice: "मेरे साथ अभ्यास",
   },
   te: {
-    kicker: "ఇంటరాక్టివ్ లెర్నింగ్ అసిస్టెంట్",
-    title: "విజేత హోలో ట్యూటర్‌ను కలవండి",
-    copy: "వాయిస్ లేదా టెక్స్ట్ ద్వారా అడగండి. ట్యూటర్ ఎంచుకున్న ప్రవేశ పరీక్షపై దృష్టి పెట్టి, ఆరవ తరగతి స్థాయిలో వివరిస్తుంది.",
+    kicker: "ప్రత్యేక సిలబస్ లెర్నింగ్ చాట్",
+    title: "విజేత AI స్టడీ ట్యూటర్",
+    copy: "సిలబస్ విషయం, అంశం ఎంచుకుని వాయిస్ లేదా టెక్స్ట్‌లో సంబంధిత ప్రశ్న అడగండి. ట్యూటర్ ఆరవ తరగతి స్థాయిలో మీకు నచ్చిన విధంగా బోధిస్తుంది.",
     online: "AI అనుసంధానమైంది",
     guided: "మార్గదర్శక సిలబస్ మోడ్",
     listening: "వింటోంది…",
     speaking: "సమాధానం చెబుతోంది…",
     thinking: "వివరణ సిద్ధమవుతోంది…",
-    placeholder: "అంశం, ప్రశ్న, టెస్ట్ లేదా చదువు ప్రణాళిక గురించి అడగండి…",
+    placeholder: "ఎంచుకున్న సిలబస్ అంశం గురించి ఏదైనా అడగండి…",
     send: "సందేశం పంపండి",
     mic: "మైక్రోఫోన్ ఉపయోగించండి",
     stopMic: "వినడం ఆపండి",
     soundOn: "వాయిస్ సమాధానాలు ఆన్",
     soundOff: "వాయిస్ సమాధానాలు ఆఫ్",
     disclosure: "AI ట్యూటర్ · సమాధానాల్లో పొరపాట్లు ఉండవచ్చు. ముఖ్యమైన సూచనలను ఉపాధ్యాయులు పరిశీలించాలి.",
-    intro: "నమస్తే! నేను మీ విజేత హోలో ట్యూటర్‌ను. సిలబస్, కష్టమైన భావన లేదా మీ తదుపరి టెస్ట్ సిద్ధత గురించి అడగండి.",
-    suggestions: ["ఈరోజు సిలబస్ వివరించండి", "5 ప్రశ్నల వార్మప్ ఇవ్వండి", "నా చదువు సమయాన్ని ప్లాన్ చేయండి"],
+    intro: "నమస్తే! పైన విషయం, అంశం ఎంచుకుని మీరు ఏమి అర్థం చేసుకోవాలనుకుంటున్నారో అడగండి. భావన స్పష్టమయ్యే వరకు తదుపరి ప్రశ్నలు అడగవచ్చు.",
+    suggestions: {
+      explain: ["ఈ అంశాన్ని సులభంగా వివరించండి", "ఇది ఎందుకు ఉపయోగకరం?", "రోజువారీ ఉదాహరణ ఇవ్వండి"],
+      steps: ["దశల వారీగా నేర్పండి", "పరిష్కరించిన ఉదాహరణ చూపండి", "మొదట ఏమి చేయాలి?"],
+      practice: ["ఒక సాధన ప్రశ్న ఇవ్వండి", "సులభమైన ప్రశ్నతో మొదలుపెట్టండి", "సమాధానం చూపకుండా ప్రశ్నించండి"],
+    },
     microphoneUnsupported: "ఈ బ్రౌజర్‌లో వాయిస్ ఇన్‌పుట్ అందుబాటులో లేదు. టైప్ చేసి కొనసాగించవచ్చు.",
     error: "ట్యూటర్ సేవను చేరుకోలేకపోయాను. మళ్లీ ప్రయత్నించండి లేదా మార్గదర్శక మోడ్‌లో సిలబస్ ప్రశ్న అడగండి.",
     you: "మీరు",
-    tutor: "హోలో ట్యూటర్",
+    tutor: "స్టడీ ట్యూటర్",
     privacy: "పాస్‌వర్డ్‌లు, ఫోన్ నంబర్లు, చిరునామాలు లేదా ఇతర వ్యక్తిగత సమాచారాన్ని పంచుకోవద్దు.",
+    subject: "సిలబస్ విషయం",
+    topic: "అంశం",
+    learningStyle: "ఎలా బోధించాలి?",
+    explain: "సులభంగా వివరించు",
+    steps: "దశల వారీగా",
+    practice: "నాతో సాధన",
   },
 };
 
@@ -93,7 +126,7 @@ const SPEECH_LOCALES = { en: "en-IN", hi: "hi-IN", te: "te-IN" };
 
 function HologramAvatar({ state }) {
   return (
-    <div className={`holo-stage ${state}`} role="img" aria-label="Animated Vijetha hologram tutor">
+    <div className={`holo-stage ${state}`} role="img" aria-label="Animated Vijetha study tutor">
       <div className="holo-grid" aria-hidden="true" />
       <div className="holo-beam" aria-hidden="true" />
       <div className="holo-rings" aria-hidden="true">
@@ -135,8 +168,8 @@ function speakReply(text, locale, { onStart, onEnd } = {}) {
   return true;
 }
 
-export function HologramTutorPage({ course, user }) {
-  const { locale } = useI18n();
+export function StudyTutorPage({ course, user }) {
+  const { locale, subject: localizeSubject } = useI18n();
   const copy = COPY[locale] || COPY.en;
   const [messages, setMessages] = useState(() => [{ role: "assistant", content: copy.intro }]);
   const [draft, setDraft] = useState("");
@@ -146,15 +179,23 @@ export function HologramTutorPage({ course, user }) {
   const [voiceReplies, setVoiceReplies] = useState(true);
   const [aiConnected, setAiConnected] = useState(false);
   const [notice, setNotice] = useState("");
+  const [selectedSubject, setSelectedSubject] = useState(course.blueprint[0]?.subject || "");
+  const [selectedTopic, setSelectedTopic] = useState(course.blueprint[0]?.topics[0]?.[0] || "");
+  const [learningMode, setLearningMode] = useState("explain");
   const recognitionRef = useRef(null);
   const voiceTranscriptRef = useRef("");
   const voiceShouldSubmitRef = useRef(false);
   const transcriptRef = useRef(null);
 
   const avatarState = listening ? "listening" : busy ? "thinking" : speaking ? "speaking" : "ready";
-  const topics = useMemo(
-    () => course.blueprint.flatMap((section) => section.topics.map(([topic]) => topic)).slice(0, 8),
-    [course],
+  const activeSection = useMemo(
+    () => course.blueprint.find((section) => section.subject === selectedSubject) || course.blueprint[0],
+    [course, selectedSubject],
+  );
+  const topics = useMemo(() => activeSection?.topics.map(([topic]) => topic) || [], [activeSection]);
+  const suggestions = useMemo(
+    () => copy.suggestions[learningMode].map((suggestion) => `${suggestion}: ${selectedTopic}`),
+    [copy.suggestions, learningMode, selectedTopic],
   );
 
   useEffect(() => {
@@ -163,6 +204,9 @@ export function HologramTutorPage({ course, user }) {
     setNotice("");
     setAiConnected(false);
     setSpeaking(false);
+    setSelectedSubject(course.blueprint[0]?.subject || "");
+    setSelectedTopic(course.blueprint[0]?.topics[0]?.[0] || "");
+    setLearningMode("explain");
     window.speechSynthesis?.cancel?.();
   }, [copy.intro, course.key]);
 
@@ -193,6 +237,11 @@ export function HologramTutorPage({ course, user }) {
           locale,
           course: course.key,
           history: messages.slice(-10),
+          learningContext: {
+            subject: selectedSubject,
+            topic: selectedTopic,
+            mode: learningMode,
+          },
         }),
       });
       const reply = String(payload.reply || copy.error);
@@ -276,11 +325,11 @@ export function HologramTutorPage({ course, user }) {
           <HologramAvatar state={avatarState} />
           <div className="hologram-identity">
             <span>VIJETHA LEARNING SYSTEM</span>
-            <h2>Holo Tutor</h2>
+            <h2>Study Tutor</h2>
             <p>{listening ? copy.listening : busy ? copy.thinking : speaking ? copy.speaking : `${course.shortName} · ${user.name.split(" ")[0]}`}</p>
           </div>
           <div className="hologram-topic-cloud">
-            {topics.map((topic) => <span key={topic}>{topic}</span>)}
+            {topics.slice(0, 8).map((topic) => <button type="button" className={selectedTopic === topic ? "active" : ""} onClick={() => setSelectedTopic(topic)} key={topic}>{topic}</button>)}
           </div>
         </aside>
 
@@ -302,6 +351,37 @@ export function HologramTutorPage({ course, user }) {
             </button>
           </div>
 
+          <div className="hologram-learning-context" aria-label="Tutor learning context">
+            <label>
+              <span>{copy.subject}</span>
+              <select
+                value={selectedSubject}
+                onChange={(event) => {
+                  const subject = event.target.value;
+                  const section = course.blueprint.find((item) => item.subject === subject);
+                  setSelectedSubject(subject);
+                  setSelectedTopic(section?.topics[0]?.[0] || "");
+                }}
+              >
+                {course.blueprint.map((section) => <option value={section.subject} key={section.key}>{localizeSubject(section.subject)}</option>)}
+              </select>
+            </label>
+            <label>
+              <span>{copy.topic}</span>
+              <select value={selectedTopic} onChange={(event) => setSelectedTopic(event.target.value)}>
+                {topics.map((topic) => <option value={topic} key={topic}>{topic}</option>)}
+              </select>
+            </label>
+            <fieldset>
+              <legend>{copy.learningStyle}</legend>
+              <div>
+                <button type="button" className={learningMode === "explain" ? "active" : ""} aria-pressed={learningMode === "explain"} onClick={() => setLearningMode("explain")}><Lightbulb size={14} />{copy.explain}</button>
+                <button type="button" className={learningMode === "steps" ? "active" : ""} aria-pressed={learningMode === "steps"} onClick={() => setLearningMode("steps")}><Footprints size={14} />{copy.steps}</button>
+                <button type="button" className={learningMode === "practice" ? "active" : ""} aria-pressed={learningMode === "practice"} onClick={() => setLearningMode("practice")}><Target size={14} />{copy.practice}</button>
+              </div>
+            </fieldset>
+          </div>
+
           <div className="hologram-transcript" ref={transcriptRef} aria-live="polite">
             {messages.map((message, index) => (
               <article className={message.role} key={`${message.role}-${index}`}>
@@ -319,7 +399,7 @@ export function HologramTutorPage({ course, user }) {
 
           {messages.length === 1 ? (
             <div className="hologram-suggestions">
-              {copy.suggestions.map((suggestion) => (
+              {suggestions.map((suggestion) => (
                 <button type="button" key={suggestion} onClick={() => submitMessage(suggestion)}>{suggestion}</button>
               ))}
             </div>
