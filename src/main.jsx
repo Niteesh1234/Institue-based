@@ -36,6 +36,7 @@ import {
   Plus,
   Printer,
   RefreshCw,
+  ScanText,
   Search,
   Send,
   Settings,
@@ -67,6 +68,7 @@ import {
 } from "./api-client.js";
 import { ResourcesPage, StudentResourcesPortal } from "./resources.jsx";
 import { BatchExamsPage } from "./batch-exams.jsx";
+import { TestImportsPage } from "./test-imports.jsx";
 import { createExamSet, EXAM_SET_CODES } from "../exam-set-engine.js";
 import { HologramTutorPage } from "./hologram-tutor.jsx";
 import {
@@ -303,6 +305,7 @@ const NAV_ITEMS = [
   ["Classes", CalendarDays],
   ["Mock Tests", ClipboardCheck],
   ["Batch Exams", ShieldCheck],
+  ["Test Import", ScanText],
   ["Resources", FileText],
   ["Progress", BarChart3],
   ["Parents", MessageSquare],
@@ -316,6 +319,7 @@ const NAV_MESSAGE_KEYS = {
   Classes: "classes",
   "Mock Tests": "mockTests",
   "Batch Exams": "batchExams",
+  "Test Import": "testImport",
   Resources: "resources",
   Progress: "progress",
   Parents: "parents",
@@ -400,7 +404,6 @@ function App() {
   const [testLoadStatus, setTestLoadStatus] = useState("idle");
   const [testLoadError, setTestLoadError] = useState("");
   const [workspaceOpen, setWorkspaceOpen] = useState(false);
-  const [resourceUploadRequest, setResourceUploadRequest] = useState(0);
   const [notificationOpen, setNotificationOpen] = useState(false);
   const [accountOpen, setAccountOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -949,6 +952,15 @@ function App() {
               canCreate={principalAccess || Boolean(instituteControl.policies.teacherCanCreateExams)}
             />
           )}
+          {active === "Test Import" && (
+            <TestImportsPage
+              course={course}
+              user={currentUser}
+              demo={Boolean(currentUser.demo)}
+              canUpload={principalAccess || Boolean(instituteControl.policies.teacherCanUploadQuestions)}
+              canManage={principalAccess}
+            />
+          )}
           {active === "Resources" && (
             <ResourcesPage
               course={course}
@@ -957,7 +969,6 @@ function App() {
               user={currentUser}
               canUpload={principalAccess || Boolean(instituteControl.policies.teacherCanUploadQuestions)}
               canManage={principalAccess}
-              openUploadRequest={resourceUploadRequest}
               onOpenStudents={() => navigateWorkspace("Students")}
             />
           )}
@@ -973,10 +984,7 @@ function App() {
               control={instituteControl}
               setControl={setInstituteControl}
               onOpenBatchExams={() => navigateWorkspace("Batch Exams")}
-              onOpenPdfUpload={() => {
-                setResourceUploadRequest(Date.now());
-                navigateWorkspace("Resources");
-              }}
+              onOpenPdfUpload={() => navigateWorkspace("Test Import")}
             />
           )}
           {principalAccess && active === "Settings" && (

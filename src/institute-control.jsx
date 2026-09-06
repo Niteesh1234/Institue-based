@@ -357,11 +357,11 @@ export function PrincipalControlPage({ user, course, batches, students, control,
           <section className="panel control-panel upload-dropzone">
             <FileUp size={32} />
             <h2>Upload a structured question paper</h2>
-            <p>Import validated question data with JSON or CSV, or upload an original PDF test paper and assign it securely to students.</p>
+            <p>Import validated JSON/CSV question data here, or open Test Import Studio to extract questions from an original PDF, scan, image, or CSV.</p>
             <label className="button primary"><input type="file" accept=".json,.csv,application/json,text/csv" onChange={uploadQuestions} disabled={uploadBusy || (!principal && !control.policies.teacherCanUploadQuestions)} />{uploadBusy ? "Validating…" : "Choose JSON / CSV"}</label>
-            <button type="button" className="button secondary" onClick={onOpenPdfUpload} disabled={!onOpenPdfUpload || (!principal && !control.policies.teacherCanUploadQuestions)}><FileUp size={16} /> Upload PDF test paper</button>
+            <button type="button" className="button secondary" onClick={onOpenPdfUpload} disabled={!onOpenPdfUpload || (!principal && !control.policies.teacherCanUploadQuestions)}><FileUp size={16} /> Open Test Import Studio</button>
             <a className="button secondary" href="/question-upload-template.csv" download>Download CSV template</a>
-            <small>Structured files receive question-level duplicate checks. PDF files are securely stored in MongoDB and assigned only to selected students.</small>
+            <small>Structured uploads receive question-level duplicate checks. Test Import Studio saves extracted previews in its separate institute collection for review.</small>
           </section>
           <section className="panel control-panel">
             <div className="panel-heading"><div><p className="section-kicker">VALIDATION REGISTER</p><h2>Question uploads</h2></div><ShieldCheck size={20} /></div>

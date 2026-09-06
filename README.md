@@ -58,6 +58,7 @@ Account and student collections in the same `Testing` database:
 - `auth_users_Vijetha`, `auth_otps_Vijetha`, `auth_sessions_Vijetha`, `auth_attempts_Vijetha`
 - `students_Vijetha` — account-scoped and course-scoped learner records
 - `batch_exams_Vijetha`, `resources_Vijetha`, `institute_control_Vijetha`
+- `test_imports_Vijetha` — institute-scoped PDF/image/CSV extraction results and question previews
 - GridFS bucket `resource_files_Vijetha` (`resource_files_Vijetha.files` and `resource_files_Vijetha.chunks`)
 
 Without `MONGODB_URI`, the question API still serves the same deterministic, validated in-memory banks. Secure login and student management intentionally remain unavailable until MongoDB is configured.
@@ -94,6 +95,34 @@ Bulk roster and question templates are available from the deployed site:
 
 - `/student-import-template.csv`
 - `/question-upload-template.csv`
+
+## Test Import Studio
+
+The separate **Test Import** workspace lets a principal or an approved teacher
+upload an original PDF, scanned PDF, Excel `.xlsx`, JPG, PNG, WebP, or structured
+CSV test.
+Maximum Accuracy mode compares page-aware PDF.js text with local Tesseract OCR
+for English, Hindi, or Telugu and keeps the stronger structured result on each
+page. Numbered, inline, multiline, numeric-option, regional-numeral, and
+unnumbered question layouts are supported. The UI is generated dynamically from
+the uploaded paper and displays detected questions, options, answer keys,
+confidence, completeness warnings, and expandable source-page images so diagrams
+remain available for review. PDF/OCR layout coordinates isolate an original image
+crop for each question; graphical option markers and Excel-embedded option images
+become selectable A/B/C/D controls. A student-preview mode hides answer keys until
+submission. Signed-in imports are saved to the institute-scoped
+`test_imports_Vijetha` collection; demo extraction is live but non-persistent.
+
+Imports are limited to 3 MB and 500 questions, validated by file signature,
+deduplicated by SHA-256 file hash, and isolated by institute and course. Uploading
+the same file again reprocesses and updates its existing result. Only a
+principal can delete an imported test. Sample CSV, Excel-with-images, text-PDF,
+scanned-PDF, PNG, visual-diagram PDF, and a two-page complex eight-question paper are available under
+`/test-import-samples/`.
+
+```bash
+npm run validate:test-imports
+```
 
 The prepaid ledger records principal-authorized credits without pretending to
 process money. Connect and configure the institute's selected payment provider

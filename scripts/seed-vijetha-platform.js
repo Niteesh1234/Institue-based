@@ -34,6 +34,8 @@ try {
     db.collection(VIJETHA_COLLECTIONS.batchExams).createIndex({ instituteId: 1, course: 1, createdAt: -1 }),
     db.collection(VIJETHA_COLLECTIONS.resources).createIndex({ ownerId: 1, course: 1, createdAt: -1 }),
     db.collection(VIJETHA_COLLECTIONS.resources).createIndex({ instituteId: 1, course: 1, createdAt: -1 }),
+    db.collection(VIJETHA_COLLECTIONS.testImports).createIndex({ instituteId: 1, course: 1, createdAt: -1 }),
+    db.collection(VIJETHA_COLLECTIONS.testImports).createIndex({ instituteId: 1, sourceHash: 1 }, { unique: true }),
     db.collection(VIJETHA_COLLECTIONS.examSubmissions).createIndex({ examId: 1, studentId: 1 }, { unique: true }),
     db.collection(VIJETHA_COLLECTIONS.examSubmissions).createIndex({ instituteId: 1, examId: 1, submittedAt: -1 }),
     db.collection(VIJETHA_COLLECTIONS.instituteControl).createIndex({ scope: 1 }, { unique: true }),
@@ -46,6 +48,7 @@ try {
     db.collection(VIJETHA_COLLECTIONS.students).updateMany({ instituteId: { $exists: false } }, { $set: { instituteId: VIJETHA_INSTITUTE_ID } }),
     db.collection(VIJETHA_COLLECTIONS.batchExams).updateMany({ instituteId: { $exists: false } }, { $set: { instituteId: VIJETHA_INSTITUTE_ID } }),
     db.collection(VIJETHA_COLLECTIONS.resources).updateMany({ instituteId: { $exists: false } }, { $set: { instituteId: VIJETHA_INSTITUTE_ID } }),
+    db.collection(VIJETHA_COLLECTIONS.testImports).updateMany({ instituteId: { $exists: false } }, { $set: { instituteId: VIJETHA_INSTITUTE_ID } }),
   ]);
   await db.collection(VIJETHA_COLLECTIONS.instituteControl).updateOne(
     { scope: VIJETHA_INSTITUTE_ID },

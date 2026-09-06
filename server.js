@@ -13,6 +13,7 @@ import logoutHandler from './api/auth/logout.js';
 import studentsHandler from './api/students.js';
 import resourcesHandler from './api/resources.js';
 import batchExamsHandler from './api/batch-exams.js';
+import testImportsHandler from './api/test-imports.js';
 import healthHandler from './api/health.js';
 
 const port = Number(process.env.PORT || 5174);
@@ -24,7 +25,7 @@ const json = (response, status, body) => {
   response.end(JSON.stringify(body));
 };
 
-const contentTypes = { '.css': 'text/css; charset=utf-8', '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.json': 'application/json; charset=utf-8', '.png': 'image/png', '.svg': 'image/svg+xml' };
+const contentTypes = { '.css': 'text/css; charset=utf-8', '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.json': 'application/json; charset=utf-8', '.csv': 'text/csv; charset=utf-8', '.pdf': 'application/pdf', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.png': 'image/png', '.webp': 'image/webp', '.svg': 'image/svg+xml' };
 const authHandlers = new Map([
   ['/api/auth/register', registerHandler],
   ['/api/auth/request-otp', requestOtpHandler],
@@ -68,6 +69,7 @@ const server = http.createServer(async (request, response) => {
   if (url.pathname === '/api/students') return runApiHandler(studentsHandler, request, response, url);
   if (url.pathname === '/api/resources') return runApiHandler(resourcesHandler, request, response, url);
   if (url.pathname === '/api/batch-exams') return runApiHandler(batchExamsHandler, request, response, url);
+  if (url.pathname === '/api/test-imports') return runApiHandler(testImportsHandler, request, response, url);
   if (url.pathname === '/api/ai-tutor') {
     url.searchParams.set('tutor', '1');
     return runApiHandler(healthHandler, request, response, url);

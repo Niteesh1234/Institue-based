@@ -12,6 +12,7 @@ export const VIJETHA_COLLECTIONS = Object.freeze({
   batchExams: 'batch_exams_Vijetha',
   examSubmissions: 'exam_submissions_Vijetha',
   resources: 'resources_Vijetha',
+  testImports: 'test_imports_Vijetha',
   instituteControl: 'institute_control_Vijetha',
   courseCatalog: 'course_catalog_Vijetha',
   resourceFilesBucket: 'resource_files_Vijetha',
