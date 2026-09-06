@@ -70,7 +70,7 @@ import { ResourcesPage, StudentResourcesPortal } from "./resources.jsx";
 import { BatchExamsPage } from "./batch-exams.jsx";
 import { TestImportsPage } from "./test-imports.jsx";
 import { createExamSet, EXAM_SET_CODES } from "../exam-set-engine.js";
-import { StudyTutorPage } from "./hologram-tutor.jsx";
+import { StudyTutorDrawer } from "./hologram-tutor.jsx";
 import {
   canPrintPapers,
   isPrincipalRole,
@@ -383,6 +383,7 @@ function App() {
   const [authUser, setAuthUser] = useState(null);
   const [authConfigured, setAuthConfigured] = useState(null);
   const [active, setActive] = useState("Dashboard");
+  const [tutorOpen, setTutorOpen] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [studioOpen, setStudioOpen] = useState(false);
   const [selectedTest, setSelectedTest] = useState(null);
@@ -456,7 +457,9 @@ function App() {
     if (!IS_NATIVE_APP) return undefined;
     let listener;
     CapacitorApp.addListener("backButton", () => {
-      if (studioOpen) {
+      if (tutorOpen) {
+        setTutorOpen(false);
+      } else if (studioOpen) {
         setStudioOpen(false);
         setSelectedTest(null);
       } else if (mobileOpen) {
@@ -468,7 +471,7 @@ function App() {
       }
     }).then((handle) => { listener = handle; });
     return () => listener?.remove();
-  }, [mobileOpen, stage, studioOpen]);
+  }, [mobileOpen, stage, studioOpen, tutorOpen]);
 
   const searchItems = useMemo(() => {
     const pages = [...visibleNavItems.map(([label]) => label), ...(principalAccess ? ["Settings"] : [])].map(
@@ -648,6 +651,14 @@ function App() {
   };
   const retryCatalog = () => setReloadKey((key) => key + 1);
   const navigateWorkspace = (destination) => {
+    if (destination === "AI Study Tutor") {
+      setTutorOpen(true);
+      setMobileOpen(false);
+      setSearchOpen(false);
+      setNotificationOpen(false);
+      setAccountOpen(false);
+      return;
+    }
     setActive(destination);
     setMobileOpen(false);
     setSearchOpen(false);
@@ -677,6 +688,7 @@ function App() {
     setStudentStatus("idle");
     setAccountOpen(false);
     setStudioOpen(false);
+    setTutorOpen(false);
     setStage("landing");
   };
 
@@ -735,7 +747,8 @@ function App() {
             <button
               type="button"
               key={label}
-              className={active === label ? "nav-item active" : "nav-item"}
+              className={(label === "AI Study Tutor" ? tutorOpen : active === label) ? "nav-item active" : "nav-item"}
+              aria-expanded={label === "AI Study Tutor" ? tutorOpen : undefined}
               onClick={() => {
                 navigateWorkspace(label);
               }}
@@ -905,9 +918,6 @@ function App() {
               canPrint={printAccess}
             />
           )}
-          {active === "AI Study Tutor" && (
-            <StudyTutorPage course={course} user={currentUser} />
-          )}
           {active === "Students" && (
             <StudentsPage
               students={studentRows}
@@ -992,6 +1002,14 @@ function App() {
           )}
         </div>
       </main>
+
+      {tutorOpen ? (
+        <StudyTutorDrawer
+          course={course}
+          user={currentUser}
+          onClose={() => setTutorOpen(false)}
+        />
+      ) : null}
 
       {studioOpen && (
         <TestStudioBoundary onClose={() => setStudioOpen(false)}>

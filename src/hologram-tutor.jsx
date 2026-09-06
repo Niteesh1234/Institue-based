@@ -12,6 +12,7 @@ import {
   Target,
   Volume2,
   VolumeX,
+  X,
 } from "lucide-react";
 import { authRequest } from "./api-client.js";
 import { useI18n } from "./i18n.jsx";
@@ -127,33 +128,6 @@ const COPY = {
 
 const SPEECH_LOCALES = { en: "en-IN", hi: "hi-IN", te: "te-IN" };
 
-function HologramAvatar({ state }) {
-  return (
-    <div className={`holo-stage ${state}`} role="img" aria-label="Animated Vijetha study tutor">
-      <div className="holo-grid" aria-hidden="true" />
-      <div className="holo-beam" aria-hidden="true" />
-      <div className="holo-rings" aria-hidden="true">
-        <i /><i /><i />
-      </div>
-      <div className="holo-avatar" aria-hidden="true">
-        <div className="holo-head">
-          <span className="holo-eye left" />
-          <span className="holo-eye right" />
-          <span className="holo-smile" />
-        </div>
-        <div className="holo-neck" />
-        <div className="holo-body">
-          <span className="holo-core"><Sparkles size={22} /></span>
-        </div>
-      </div>
-      <div className="holo-scanlines" aria-hidden="true" />
-      <div className="holo-state-label">
-        <span /> {state === "listening" ? "VOICE LINK" : state === "thinking" ? "PROCESSING" : state === "speaking" ? "SPEAKING" : "READY"}
-      </div>
-    </div>
-  );
-}
-
 function speakReply(text, locale, { onStart, onEnd } = {}) {
   if (!("speechSynthesis" in window) || !text) {
     onEnd?.();
@@ -171,7 +145,7 @@ function speakReply(text, locale, { onStart, onEnd } = {}) {
   return true;
 }
 
-export function StudyTutorPage({ course, user }) {
+export function StudyTutorDrawer({ course, user, onClose }) {
   const { locale, subject: localizeSubject } = useI18n();
   const copy = COPY[locale] || COPY.en;
   const [messages, setMessages] = useState(() => [{ role: "assistant", content: copy.intro }]);
@@ -189,6 +163,9 @@ export function StudyTutorPage({ course, user }) {
   const voiceTranscriptRef = useRef("");
   const voiceShouldSubmitRef = useRef(false);
   const transcriptRef = useRef(null);
+  const composerRef = useRef(null);
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
 
   const avatarState = listening ? "listening" : busy ? "thinking" : speaking ? "speaking" : "ready";
   const activeSection = useMemo(
@@ -220,6 +197,21 @@ export function StudyTutorPage({ course, user }) {
   useEffect(() => () => {
     recognitionRef.current?.stop?.();
     window.speechSynthesis?.cancel?.();
+  }, []);
+
+  useEffect(() => {
+    const previousOverflow = document.body.style.overflow;
+    const closeOnEscape = (event) => {
+      if (event.key === "Escape") onCloseRef.current?.();
+    };
+    document.body.style.overflow = "hidden";
+    document.addEventListener("keydown", closeOnEscape);
+    const focusTimer = window.setTimeout(() => composerRef.current?.focus(), 80);
+    return () => {
+      window.clearTimeout(focusTimer);
+      document.body.style.overflow = previousOverflow;
+      document.removeEventListener("keydown", closeOnEscape);
+    };
   }, []);
 
   const submitMessage = async (value = draft) => {
@@ -311,49 +303,52 @@ export function StudyTutorPage({ course, user }) {
   };
 
   return (
-    <section className="hologram-page" aria-labelledby="hologram-title">
-      <header className="hologram-heading">
-        <div>
-          <span><Sparkles size={15} /> {copy.kicker}</span>
-          <h1 id="hologram-title">{copy.title}</h1>
-          <p>{copy.copy}</p>
-        </div>
-        <div className={`hologram-mode ${aiConnected ? "online" : "guided"}`}>
-          {aiConnected ? <Sparkles size={16} /> : <BookOpen size={16} />}
-          <span><b>{aiConnected ? copy.online : copy.guided}</b><small>{course.shortName} · {course.className}</small></span>
-        </div>
-      </header>
-
-      <div className="hologram-layout">
-        <aside className="hologram-visual-panel">
-          <HologramAvatar state={avatarState} />
-          <div className="hologram-identity">
-            <span>VIJETHA LEARNING SYSTEM</span>
-            <h2>Study Tutor</h2>
+    <div
+      className="tutor-drawer-backdrop"
+      onMouseDown={(event) => {
+        if (event.target === event.currentTarget) onClose?.();
+      }}
+    >
+      <aside className="tutor-drawer" role="dialog" aria-modal="true" aria-labelledby="hologram-title">
+        <header className="tutor-drawer-header">
+          <div className={`tutor-orb ${avatarState}`} aria-hidden="true">
+            <Bot size={23} />
+            <span />
+          </div>
+          <div className="tutor-drawer-title">
+            <span><Sparkles size={13} /> {copy.kicker}</span>
+            <h1 id="hologram-title">{copy.title}</h1>
             <p>{listening ? copy.listening : busy ? copy.thinking : speaking ? copy.speaking : `${course.shortName} · ${user.name.split(" ")[0]}`}</p>
           </div>
-          <div className="hologram-topic-cloud">
-            {topics.slice(0, 8).map((topic) => <button type="button" className={selectedTopic === topic ? "active" : ""} onClick={() => setSelectedTopic(topic)} key={topic}>{topic}</button>)}
+          <button type="button" className="tutor-close" aria-label="Close AI Study Tutor" title="Close" onClick={onClose}>
+            <X size={20} />
+          </button>
+        </header>
+
+        <div className="tutor-drawer-status-row">
+          <div className={`hologram-mode ${aiConnected ? "online" : "guided"}`}>
+            {aiConnected ? <Sparkles size={15} /> : <BookOpen size={15} />}
+            <span><b>{aiConnected ? copy.online : copy.guided}</b><small>{course.shortName} · {course.className}</small></span>
           </div>
-        </aside>
+          <button
+            type="button"
+            className={`tutor-voice-toggle ${voiceReplies ? "active" : ""}`}
+            aria-label={voiceReplies ? copy.soundOn : copy.soundOff}
+            title={voiceReplies ? copy.soundOn : copy.soundOff}
+            onClick={() => {
+              setVoiceReplies((enabled) => !enabled);
+              window.speechSynthesis?.cancel?.();
+              setSpeaking(false);
+            }}
+          >
+            {voiceReplies ? <Volume2 size={17} /> : <VolumeX size={17} />}
+            <span>{voiceReplies ? copy.soundOn : copy.soundOff}</span>
+          </button>
+        </div>
+
+        <p className="tutor-drawer-copy">{copy.copy}</p>
 
         <div className="hologram-chat-panel">
-          <div className="hologram-chat-topbar">
-            <div><Bot size={18} /><span><b>{copy.tutor}</b><small>{course.name}</small></span></div>
-            <button
-              type="button"
-              className={voiceReplies ? "active" : ""}
-              aria-label={voiceReplies ? copy.soundOn : copy.soundOff}
-              title={voiceReplies ? copy.soundOn : copy.soundOff}
-              onClick={() => {
-                setVoiceReplies((enabled) => !enabled);
-                window.speechSynthesis?.cancel?.();
-                setSpeaking(false);
-              }}
-            >
-              {voiceReplies ? <Volume2 size={17} /> : <VolumeX size={17} />}
-            </button>
-          </div>
 
           <div className="hologram-learning-context" aria-label="Tutor learning context">
             <label>
@@ -421,6 +416,7 @@ export function StudyTutorPage({ course, user }) {
               {listening ? <MicOff size={19} /> : <Mic size={19} />}
             </button>
             <input
+              ref={composerRef}
               value={draft}
               maxLength={1200}
               aria-label={copy.placeholder}
@@ -436,7 +432,7 @@ export function StudyTutorPage({ course, user }) {
             <span>{copy.privacy}</span>
           </footer>
         </div>
-      </div>
-    </section>
+      </aside>
+    </div>
   );
 }

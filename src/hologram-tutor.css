@@ -232,6 +232,131 @@
 .hologram-chat-panel footer { display: flex; justify-content: space-between; gap: 15px; padding: 13px 25px 17px; color: #5d6a67; font-size: 8px; line-height: 1.35; }
 .hologram-chat-panel footer span:first-child { display: flex; align-items: center; gap: 5px; color: #517a72; }
 
+.tutor-drawer-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: flex;
+  justify-content: flex-end;
+  background: rgba(15, 31, 35, .3);
+  backdrop-filter: blur(2px);
+  animation: tutor-backdrop-in .2s ease-out both;
+}
+
+.tutor-drawer {
+  --holo-cyan: #68f3e4;
+  --holo-teal: #1ec9b7;
+  --holo-deep: #102b32;
+  --holo-ink: #162a31;
+  width: min(520px, calc(100vw - 28px));
+  height: 100dvh;
+  min-width: 0;
+  display: grid;
+  grid-template-rows: auto auto auto minmax(0, 1fr);
+  overflow: hidden;
+  border-left: 1px solid rgba(105, 191, 178, .35);
+  background: #fffdfa;
+  box-shadow: -22px 0 65px rgba(10, 32, 37, .24);
+  animation: tutor-drawer-in .28s cubic-bezier(.2, .82, .32, 1) both;
+}
+
+.tutor-drawer-header {
+  min-height: 92px;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 13px;
+  padding: 18px 19px;
+  color: #eafffb;
+  background:
+    radial-gradient(circle at 12% 20%, rgba(77, 231, 213, .2), transparent 30%),
+    linear-gradient(135deg, #17373e, #0d252c 70%);
+}
+
+.tutor-orb {
+  position: relative;
+  width: 50px;
+  height: 50px;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(130, 255, 240, .65);
+  border-radius: 16px;
+  color: #b8fff6;
+  background: rgba(67, 196, 183, .14);
+  box-shadow: inset 0 0 18px rgba(88, 242, 224, .1), 0 0 20px rgba(64, 222, 204, .12);
+}
+
+.tutor-orb > span {
+  position: absolute;
+  right: -2px;
+  bottom: -2px;
+  width: 11px;
+  height: 11px;
+  border: 2px solid #17363d;
+  border-radius: 50%;
+  background: #5ce1d1;
+  box-shadow: 0 0 10px rgba(92, 225, 209, .8);
+}
+.tutor-orb.listening > span { background: #f0aa45; animation: holo-speaking-light .75s ease-in-out infinite; }
+.tutor-orb.thinking > span { animation: holo-speaking-light .65s ease-in-out infinite; }
+.tutor-orb.speaking > span { animation: holo-speaking-light .45s ease-in-out infinite; }
+
+.tutor-drawer-title { min-width: 0; }
+.tutor-drawer-title > span { display: flex; align-items: center; gap: 6px; color: #63dfd0; font-size: 7px; font-weight: 900; letter-spacing: .12em; white-space: nowrap; }
+.tutor-drawer-title h1 { overflow: hidden; margin: 5px 0 2px; color: #fff; font: 800 21px/1.05 Syne, sans-serif; letter-spacing: -.04em; text-overflow: ellipsis; white-space: nowrap; }
+.tutor-drawer-title p { color: #9fc4bf; font-size: 9px; }
+.tutor-close {
+  width: 38px;
+  height: 38px;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(176, 234, 225, .2);
+  border-radius: 11px;
+  color: #b9d5d1;
+  background: rgba(255, 255, 255, .06);
+}
+.tutor-close:hover { color: #fff; background: rgba(255, 255, 255, .12); }
+
+.tutor-drawer-status-row {
+  display: flex;
+  align-items: stretch;
+  gap: 8px;
+  padding: 12px 16px 0;
+}
+.tutor-drawer .hologram-mode { min-width: 0; flex: 1; padding: 9px 11px; border-radius: 10px; }
+.tutor-voice-toggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 11px;
+  border: 1px solid #d9dfdc;
+  border-radius: 10px;
+  color: #73817d;
+  background: #fff;
+  font-size: 8px;
+  font-weight: 800;
+}
+.tutor-voice-toggle.active { border-color: #a5d8ce; color: #258f82; background: #e9f6f2; }
+.tutor-drawer-copy { padding: 10px 17px 12px; color: #657570; font-size: 10px; line-height: 1.45; }
+
+.tutor-drawer .hologram-chat-panel {
+  min-height: 0;
+  grid-template-rows: auto minmax(80px, 1fr) auto auto auto auto;
+  overflow: hidden;
+  border-top: 1px solid #e4e8e4;
+}
+.tutor-drawer .hologram-learning-context { padding: 12px 16px; }
+.tutor-drawer .hologram-transcript { max-height: none; padding: 18px 16px; }
+.tutor-drawer .hologram-transcript article { max-width: 92%; }
+.tutor-drawer .hologram-transcript article p { font-size: 11px; }
+.tutor-drawer .hologram-suggestions { padding: 0 16px 11px; }
+.tutor-drawer .hologram-notice { margin: 0 16px 9px; }
+.tutor-drawer .hologram-composer { margin: 0 16px; }
+.tutor-drawer .hologram-chat-panel footer { padding: 10px 17px 13px; }
+
+@keyframes tutor-backdrop-in { from { opacity: 0; } }
+@keyframes tutor-drawer-in { from { opacity: .65; transform: translateX(34px); } }
+
 @keyframes holo-float { 50% { transform: translate(-50%, -9px); } }
 @keyframes holo-ring { 50% { transform: scale(1.08); opacity: .45; } }
 @keyframes holo-core { 50% { transform: translate(-50%, -50%) scale(1.12); opacity: .7; } }
@@ -249,6 +374,16 @@
 }
 
 @media (max-width: 760px) {
+  .tutor-drawer-backdrop { background: rgba(15, 31, 35, .18); }
+  .tutor-drawer { width: 100%; border-left: 0; }
+  .tutor-drawer-header { min-height: 88px; padding: 14px; }
+  .tutor-orb { width: 44px; height: 44px; border-radius: 14px; }
+  .tutor-drawer-title h1 { overflow: visible; font-size: 16px; line-height: 1.12; text-overflow: clip; white-space: normal; }
+  .tutor-drawer-title > span { max-width: 210px; overflow: hidden; text-overflow: ellipsis; }
+  .tutor-drawer-status-row { padding: 10px 12px 0; }
+  .tutor-voice-toggle span { display: none; }
+  .tutor-voice-toggle { width: 42px; justify-content: center; padding: 0; }
+  .tutor-drawer-copy { padding: 8px 13px 10px; }
   .hologram-heading { display: block; }
   .hologram-mode { width: fit-content; margin-top: 17px; }
   .hologram-layout { display: block; min-height: 0; }
@@ -265,10 +400,24 @@
   .hologram-suggestions { padding: 0 18px 13px; }
   .hologram-composer { margin: 0 14px; }
   .hologram-chat-panel footer { flex-direction: column; padding: 12px 15px 16px; }
+  .tutor-drawer .hologram-learning-context { grid-template-columns: 1fr 1fr; padding: 10px 12px; }
+  .tutor-drawer .hologram-learning-context fieldset { grid-column: 1 / -1; }
+  .tutor-drawer .hologram-transcript { max-height: none; padding: 14px 12px; }
+  .tutor-drawer .hologram-suggestions { padding: 0 12px 9px; }
+  .tutor-drawer .hologram-composer { margin: 0 12px; }
+  .tutor-drawer .hologram-chat-panel footer { flex-direction: row; padding: 9px 13px 11px; }
+  .tutor-drawer .hologram-chat-panel footer span:last-child { display: none; }
+}
+
+@media (max-width: 430px) {
+  .tutor-drawer .hologram-learning-context { grid-template-columns: 1fr; }
+  .tutor-drawer .hologram-learning-context fieldset { grid-column: auto; }
+  .tutor-drawer .hologram-learning-context fieldset > div { flex-wrap: nowrap; overflow-x: auto; padding-bottom: 2px; }
+  .tutor-drawer .hologram-learning-context fieldset button { flex: 0 0 auto; }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .holo-rings i, .holo-avatar, .holo-core, .holo-scanlines:after, .holo-eye, .holo-smile, .holo-state-label span, .thinking-message i, .hologram-composer button.listening { animation: none !important; }
+  .holo-rings i, .holo-avatar, .holo-core, .holo-scanlines:after, .holo-eye, .holo-smile, .holo-state-label span, .thinking-message i, .hologram-composer button.listening, .tutor-drawer-backdrop, .tutor-drawer, .tutor-orb > span { animation: none !important; }
 }
 
 @media print {
