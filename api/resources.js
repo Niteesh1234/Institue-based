@@ -11,6 +11,7 @@ import {
 } from '../resource-service.js';
 import { listStudentBatchExams } from '../batch-exam-service.js';
 import { withApiObservability } from '../api-observability.js';
+import testImportsHandler from '../test-import-handler.js';
 
 const maxRequestBytes = 4.25 * 1024 * 1024;
 
@@ -86,4 +87,9 @@ async function handler(request, response) {
   }
 }
 
-export default withApiObservability('resources', handler);
+const resourcesHandler = withApiObservability('resources', handler);
+
+export default function routedHandler(request, response) {
+  if (request.query?.module === 'test-imports') return testImportsHandler(request, response);
+  return resourcesHandler(request, response);
+}

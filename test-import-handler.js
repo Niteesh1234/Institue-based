@@ -1,11 +1,11 @@
-import { applyNativeCors, assertSameOrigin, AuthError, sendAuthError } from '../auth-service.js';
+import { applyNativeCors, assertSameOrigin, AuthError, sendAuthError } from './auth-service.js';
 import {
   createTestImport,
   deleteTestImport,
   listTestImports,
   previewTestImport,
-} from '../test-import-service.js';
-import { withApiObservability } from '../api-observability.js';
+} from './test-import-service.js';
+import { withApiObservability } from './api-observability.js';
 
 const maxRequestBytes = 4.25 * 1024 * 1024;
 const previewWindowMs = 10 * 60 * 1000;

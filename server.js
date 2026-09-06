@@ -13,7 +13,7 @@ import logoutHandler from './api/auth/logout.js';
 import studentsHandler from './api/students.js';
 import resourcesHandler from './api/resources.js';
 import batchExamsHandler from './api/batch-exams.js';
-import testImportsHandler from './api/test-imports.js';
+import testImportsHandler from './test-import-handler.js';
 import healthHandler from './api/health.js';
 
 const port = Number(process.env.PORT || 5174);

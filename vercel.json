@@ -4,6 +4,10 @@
   "outputDirectory": "dist",
   "rewrites": [
     {
+      "source": "/api/test-imports",
+      "destination": "/api/resources?module=test-imports"
+    },
+    {
       "source": "/api/validation-report",
       "destination": "/api/health?report=1"
     },
@@ -24,7 +28,7 @@
     }
   ],
   "functions": {
-    "api/test-imports.js": {
+    "api/resources.js": {
       "maxDuration": 60,
       "includeFiles": "node_modules/{@tesseract.js-data,tesseract.js-core,pdfjs-dist}/**"
     },

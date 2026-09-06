@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import testImportsHandler from '../api/test-imports.js';
+import testImportsHandler from '../test-import-handler.js';
 import { VIJETHA_COLLECTIONS } from '../database-config.js';
 import {
   decodeTestImportFile,
