@@ -215,6 +215,24 @@
 .hologram-transcript article b { display: block; margin-bottom: 5px; color: #1c7067; font-size: 8px; letter-spacing: .08em; text-transform: uppercase; }
 .hologram-transcript article.user b { color: #a15445; text-align: right; }
 .hologram-transcript article p { color: #344945; font-size: 11px; line-height: 1.55; white-space: pre-wrap; }
+.tutor-message-rich { color: #344945; font-size: 11px; line-height: 1.58; }
+.tutor-message-rich > :first-child { margin-top: 0; }
+.tutor-message-rich > :last-child { margin-bottom: 0; }
+.tutor-message-rich p { margin: 0 0 9px; white-space: normal; }
+.tutor-message-rich h3,
+.tutor-message-rich h4 { margin: 14px 0 6px; color: #173f3a; font-family: Syne, sans-serif; letter-spacing: -.02em; }
+.tutor-message-rich h3 { font-size: 13px; }
+.tutor-message-rich h4 { font-size: 11px; }
+.tutor-message-rich ul,
+.tutor-message-rich ol { display: grid; gap: 5px; margin: 7px 0 10px; padding-left: 19px; }
+.tutor-message-rich li { padding-left: 2px; }
+.tutor-message-rich li::marker { color: #258f82; font-weight: 800; }
+.tutor-message-rich strong { color: #174d46; font-weight: 850; }
+.tutor-message-rich em { color: #536d67; }
+.tutor-message-rich blockquote { margin: 9px 0; padding: 8px 10px; border-left: 3px solid #54aa9d; border-radius: 0 7px 7px 0; background: #eaf5f1; color: #2d5c55; }
+.tutor-message-rich code { padding: 1px 4px; border-radius: 4px; background: #e7eeeb; color: #28554e; font: 600 10px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace; }
+.tutor-message-rich a { color: #147d70; font-weight: 750; text-decoration-thickness: 1px; text-underline-offset: 2px; }
+.tutor-message-rich hr { margin: 12px 0; border: 0; border-top: 1px solid #d9e5e0; }
 .thinking-message p { display: flex; gap: 4px; min-width: 42px; padding: 5px 0; }
 .thinking-message i { width: 6px; height: 6px; border-radius: 50%; background: #36a798; animation: holo-dot 1s infinite alternate; }
 .thinking-message i:nth-child(2) { animation-delay: .2s; }.thinking-message i:nth-child(3) { animation-delay: .4s; }

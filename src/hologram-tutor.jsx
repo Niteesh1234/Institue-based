@@ -1,4 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import {
   Bot,
   BookOpen,
@@ -127,6 +129,27 @@ const COPY = {
 };
 
 const SPEECH_LOCALES = { en: "en-IN", hi: "hi-IN", te: "te-IN" };
+
+const TUTOR_MARKDOWN_COMPONENTS = {
+  h1: ({ children }) => <h3>{children}</h3>,
+  h2: ({ children }) => <h3>{children}</h3>,
+  h3: ({ children }) => <h3>{children}</h3>,
+  h4: ({ children }) => <h4>{children}</h4>,
+  a: ({ children, href }) => (
+    <a href={href} target="_blank" rel="noreferrer">{children}</a>
+  ),
+};
+
+function TutorMessageContent({ content, assistant }) {
+  if (!assistant) return <p className="tutor-message-plain">{content}</p>;
+  return (
+    <div className="tutor-message-rich">
+      <ReactMarkdown remarkPlugins={[remarkGfm]} components={TUTOR_MARKDOWN_COMPONENTS}>
+        {content}
+      </ReactMarkdown>
+    </div>
+  );
+}
 
 function speakReply(text, locale, { onStart, onEnd } = {}) {
   if (!("speechSynthesis" in window) || !text) {
@@ -385,7 +408,10 @@ export function StudyTutorDrawer({ course, user, onClose }) {
             {messages.map((message, index) => (
               <article className={message.role} key={`${message.role}-${index}`}>
                 <span>{message.role === "assistant" ? <Bot size={14} /> : user.name.slice(0, 1).toUpperCase()}</span>
-                <div><b>{message.role === "assistant" ? copy.tutor : copy.you}</b><p>{message.content}</p></div>
+                <div>
+                  <b>{message.role === "assistant" ? copy.tutor : copy.you}</b>
+                  <TutorMessageContent content={message.content} assistant={message.role === "assistant"} />
+                </div>
               </article>
             ))}
             {busy ? (

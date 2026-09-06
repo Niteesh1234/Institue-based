@@ -62,6 +62,8 @@
     "pdfjs-dist": "^6.3.289",
     "react": "latest",
     "react-dom": "latest",
+    "react-markdown": "^10.1.0",
+    "remark-gfm": "^4.0.1",
     "tesseract.js": "^7.0.0",
     "unpdf": "^1.8.1",
     "vite": "latest"
